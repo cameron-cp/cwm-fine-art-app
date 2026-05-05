@@ -35,9 +35,24 @@ export const metadata: Metadata = {
   description: "Private art inventory + tearsheet generator",
 };
 
+// Strips Clerk's default sign-in/sign-up chrome — no "Welcome back" subtitle,
+// no "Don't have an account? Sign up" footer. Pair with disabling sign-ups
+// in the Clerk Dashboard (Restrictions → Sign-up mode → Restricted) so the
+// sign-up route can't be hit even by URL.
+const clerkLocalization = {
+  signIn: {
+    start: {
+      title: "Sign in",
+      subtitle: " ",
+      actionText: " ",
+      actionLink: " ",
+    },
+  },
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={clerkLocalization}>
       <html
         lang="en"
         className={`${notoSans.variable} ${notoSansMono.variable} ${ebGaramond.variable} h-full antialiased`}
