@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Netlify's secrets scanner flags every NEXT_PUBLIC_* env value it finds in the
+# build output as a leaked secret. But NEXT_PUBLIC_* is the Next.js convention
+# for env vars that are intentionally inlined into the client bundle — they're
+# public by design (Clerk publishable keys, Supabase publishable keys, redirect
+# URLs, etc). The actual server-side secrets (CLERK_SECRET_KEY, ANTHROPIC_API_KEY,
+# SUPABASE_SERVICE_ROLE_KEY, BROWSERLESS_API_KEY, TEARSHEET_RENDER_SECRET) are
+# still scanned and protected.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,NEXT_PUBLIC_CLERK_SIGN_IN_URL,NEXT_PUBLIC_CLERK_SIGN_UP_URL,NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL,NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL"
