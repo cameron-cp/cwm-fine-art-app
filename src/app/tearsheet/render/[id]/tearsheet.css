@@ -1,0 +1,138 @@
+/* Factsheet template — modeled on the Guston Migration sample.
+   EB Garamond serif body, brand header + footer (running on every page),
+   page numbers via @page margin boxes. */
+
+@page {
+  size: Letter;
+  margin: 0.85in 0.85in 0.95in 0.85in;
+
+  @bottom-center {
+    content: counter(page) " of " counter(pages);
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 9.5pt;
+    color: #555;
+    padding-bottom: 0.25in;
+  }
+}
+
+:root {
+  --ts-fg: #111;
+  --ts-muted: #5d5d5d;
+  --ts-rule: #d8d8d8;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: white;
+  color: var(--ts-fg);
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Override Radix Theme + Noto Sans inherited from the root layout — the
+   tearsheet is its own typographic environment. */
+.ts-page,
+.ts-page * {
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+}
+
+.ts-page {
+  color: var(--ts-fg);
+}
+
+.ts-header {
+  font-weight: 600;
+  font-size: 12pt;
+  margin-bottom: 0.4in;
+  letter-spacing: 0.01em;
+}
+
+.ts-image-wrap {
+  width: 100%;
+  margin-bottom: 0.3in;
+  display: flex;
+  justify-content: center;
+  break-inside: avoid;
+}
+
+.ts-image {
+  max-width: 100%;
+  max-height: 5.5in;
+  object-fit: contain;
+  display: block;
+}
+
+.ts-image-empty {
+  width: 100%;
+  height: 4in;
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ts-muted);
+  font-size: 11pt;
+}
+
+.ts-meta {
+  margin-bottom: 0.25in;
+}
+
+.ts-artist {
+  font-weight: 700;
+  font-size: 14pt;
+  margin-bottom: 0.04in;
+  letter-spacing: 0.005em;
+}
+
+.ts-title {
+  font-size: 12pt;
+  margin-bottom: 0.04in;
+}
+
+.ts-title em {
+  font-style: italic;
+}
+
+.ts-line {
+  font-size: 12pt;
+  margin: 0;
+  padding: 0;
+}
+
+.ts-paragraph {
+  font-size: 12pt;
+  margin: 0.14in 0;
+}
+
+.ts-cr {
+  margin-top: 0.2in;
+  font-style: italic;
+}
+
+.ts-section {
+  margin-top: 0.3in;
+}
+
+.ts-section-heading {
+  font-size: 12pt;
+  font-weight: 700;
+  margin: 0 0 0.08in 0;
+  break-after: avoid;
+}
+
+.ts-footer {
+  margin-top: 0.55in;
+  font-weight: 600;
+  font-size: 11pt;
+  text-align: center;
+}
+
+.render-error {
+  padding: 24px;
+  font-family: var(--font-noto-sans), Helvetica, Arial, sans-serif;
+  color: #b00;
+}
