@@ -17,7 +17,9 @@ export async function getInvoiceFormOptions(): Promise<{
       .order("title"),
     supabase
       .from("parties")
-      .select("id, display_name, legal_name, email, address")
+      .select(
+        "id, display_name, legal_name, email, party_addresses(id, label, line1, line2, city, region, postal_code, country_code, is_primary, position)",
+      )
       .order("display_name"),
   ]);
 
@@ -46,5 +48,20 @@ export async function getInvoiceFormOptions(): Promise<{
     };
   });
 
-  return { artworkOptions, partyOptions: (parties ?? []) as PartyOption[] };
+  const partyOptions: PartyOption[] = (parties ?? []).map((p) => {
+    const rows = (p.party_addresses ?? []) as PartyOption["addresses"];
+    return {
+      id: p.id as string,
+      display_name: p.display_name as string,
+      legal_name: p.legal_name as string | null,
+      email: p.email as string | null,
+      // Primary first, then by saved position.
+      addresses: [...rows].sort(
+        (a, b) =>
+          Number(b.is_primary) - Number(a.is_primary) || a.position - b.position,
+      ),
+    };
+  });
+
+  return { artworkOptions, partyOptions };
 }

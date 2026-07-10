@@ -6,30 +6,53 @@ import {
   Callout,
   Checkbox,
   Flex,
+  IconButton,
   RadioGroup,
+  Select,
+  Separator,
   Text,
   TextArea,
   TextField,
 } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import {
+  addressLabelSuggestions,
+  ENTITY_TYPE_LABELS,
+  entityTypes,
   PARTY_KIND_LABELS,
   PARTY_ROLE_LABELS,
   partyKinds,
   partyRoles,
   partySchema,
   type Party,
+  type PartyAddressRow,
   type PartyFormInput,
   type PartyInput,
   type PartyRole,
 } from "@/lib/schemas/party";
 import { createParty, deleteParty, updateParty } from "./actions";
 
-type Props = { party?: Party; roles?: PartyRole[] };
+type Props = { party?: Party; roles?: PartyRole[]; addresses?: PartyAddressRow[] };
 
-export function ContactForm({ party, roles = [] }: Props) {
+const NONE = "__none__";
+
+const emptyAddress = (): NonNullable<PartyFormInput["addresses"]>[number] => ({
+  label: "Residence",
+  line1: "",
+  line2: null,
+  city: null,
+  region: null,
+  postal_code: null,
+  country_code: null,
+  is_primary: false,
+});
+
+export function ContactForm({ party, roles = [], addresses = [] }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -45,13 +68,32 @@ export function ContactForm({ party, roles = [] }: Props) {
       kind: party?.kind ?? "person",
       display_name: party?.display_name ?? "",
       legal_name: party?.legal_name ?? null,
+      entity_type: party?.entity_type ?? null,
       email: party?.email ?? null,
       phone: party?.phone ?? null,
-      address: party?.address ?? null,
       notes: party?.notes ?? null,
       roles,
+      addresses: addresses.length
+        ? addresses.map((a) => ({
+            id: a.id,
+            label: a.label,
+            line1: a.line1,
+            line2: a.line2,
+            city: a.city,
+            region: a.region,
+            postal_code: a.postal_code,
+            country_code: a.country_code,
+            is_primary: a.is_primary,
+          }))
+        : [],
     },
   });
+
+  const {
+    fields: addressFields,
+    append: appendAddress,
+    remove: removeAddress,
+  } = useFieldArray({ control, name: "addresses" });
 
   function onSubmit(values: PartyInput) {
     setError(null);
@@ -85,7 +127,7 @@ export function ContactForm({ party, roles = [] }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Flex direction="column" gap="4" maxWidth="560px">
+      <Flex direction="column" gap="4" maxWidth="620px">
         {error && (
           <Callout.Root color="red">
             <Callout.Text>{error}</Callout.Text>
@@ -119,22 +161,200 @@ export function ContactForm({ party, roles = [] }: Props) {
           />
         </Field>
 
-        <Field label="Legal name" error={errors.legal_name?.message}>
-          <TextField.Root {...register("legal_name")} placeholder="Full legal name or LLC" />
-        </Field>
+        <Flex gap="3">
+          <Field label="Legal name" error={errors.legal_name?.message}>
+            <TextField.Root
+              {...register("legal_name")}
+              placeholder="Full legal name, if different"
+            />
+          </Field>
+          <Field label="Legal structure" error={errors.entity_type?.message}>
+            <Controller
+              control={control}
+              name="entity_type"
+              render={({ field }) => (
+                <Select.Root
+                  value={field.value ?? NONE}
+                  onValueChange={(v) => field.onChange(v === NONE ? null : v)}
+                >
+                  <Select.Trigger placeholder="Not specified" />
+                  <Select.Content>
+                    <Select.Item value={NONE}>Not specified</Select.Item>
+                    {entityTypes.map((t) => (
+                      <Select.Item key={t} value={t}>
+                        {ENTITY_TYPE_LABELS[t]}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              )}
+            />
+          </Field>
+        </Flex>
 
         <Flex gap="3">
           <Field label="Email" error={errors.email?.message}>
             <TextField.Root {...register("email")} placeholder="name@example.com" />
           </Field>
           <Field label="Phone" error={errors.phone?.message}>
-            <TextField.Root {...register("phone")} placeholder="+1 555 123 4567" />
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field }) => (
+                <PhoneInput
+                  international
+                  value={(field.value as string | null) ?? undefined}
+                  onChange={(v) => field.onChange(v ?? null)}
+                  placeholder="Enter phone number"
+                />
+              )}
+            />
           </Field>
         </Flex>
 
-        <Field label="Address" error={errors.address?.message}>
-          <TextArea {...register("address")} rows={3} placeholder="Street, City, State / Country, Postal Code" />
-        </Field>
+        <Separator size="4" />
+
+        <Flex justify="between" align="center">
+          <Text size="3" weight="medium">
+            Addresses
+          </Text>
+          <Button
+            type="button"
+            variant="soft"
+            size="1"
+            onClick={() => appendAddress(emptyAddress())}
+          >
+            Add address
+          </Button>
+        </Flex>
+        <Text size="1" color="gray">
+          Add one per location — residence, office, storage, freeport. Mark the
+          one to use by default.
+        </Text>
+
+        {addressFields.length === 0 && (
+          <Text size="2" color="gray">
+            No address yet.
+          </Text>
+        )}
+
+        {addressFields.map((f, i) => (
+          <Flex
+            key={f.id}
+            direction="column"
+            gap="2"
+            className="border border-[var(--gray-a5)] rounded-3 p-3"
+          >
+            <Flex gap="3" align="end">
+              <Field label="Label">
+                <Controller
+                  control={control}
+                  name={`addresses.${i}.label` as const}
+                  render={({ field }) => (
+                    <Select.Root
+                      value={(field.value as string | null) ?? "Other"}
+                      onValueChange={field.onChange}
+                    >
+                      <Select.Trigger />
+                      <Select.Content>
+                        {addressLabelSuggestions.map((l) => (
+                          <Select.Item key={l} value={l}>
+                            {l}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  )}
+                />
+              </Field>
+              <Controller
+                control={control}
+                name="addresses"
+                render={({ field }) => (
+                  <Text as="label" size="2">
+                    <Flex gap="2" align="center" pb="2">
+                      <Checkbox
+                        checked={field.value?.[i]?.is_primary ?? false}
+                        onCheckedChange={(v) => {
+                          // Primary is exclusive — checking one clears the rest.
+                          field.onChange(
+                            (field.value ?? []).map((a, idx) => ({
+                              ...a,
+                              is_primary: v === true && idx === i,
+                            })),
+                          );
+                        }}
+                      />
+                      Primary
+                    </Flex>
+                  </Text>
+                )}
+              />
+              <IconButton
+                type="button"
+                variant="soft"
+                color="red"
+                size="1"
+                mb="2"
+                onClick={() => removeAddress(i)}
+              >
+                ✕
+              </IconButton>
+            </Flex>
+
+            <Field
+              label="Street address"
+              error={errors.addresses?.[i]?.line1?.message}
+              required
+            >
+              <TextField.Root
+                {...register(`addresses.${i}.line1` as const)}
+                placeholder="Street and number"
+              />
+            </Field>
+            <Field label="Address line 2">
+              <TextField.Root
+                {...register(`addresses.${i}.line2` as const)}
+                placeholder="Apartment, suite, unit (optional)"
+              />
+            </Field>
+            <Flex gap="3">
+              <Field label="City">
+                <TextField.Root {...register(`addresses.${i}.city` as const)} />
+              </Field>
+              <Field label="State / Region">
+                <TextField.Root {...register(`addresses.${i}.region` as const)} />
+              </Field>
+              <Field label="Postal code">
+                <TextField.Root {...register(`addresses.${i}.postal_code` as const)} />
+              </Field>
+            </Flex>
+            <Field label="Country">
+              <Controller
+                control={control}
+                name={`addresses.${i}.country_code` as const}
+                render={({ field }) => (
+                  <Select.Root
+                    value={(field.value as string | null) ?? NONE}
+                    onValueChange={(v) => field.onChange(v === NONE ? null : v)}
+                  >
+                    <Select.Trigger placeholder="Select a country" />
+                    <Select.Content>
+                      <Select.Item value={NONE}>—</Select.Item>
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <Select.Item key={c.code} value={c.code}>
+                          {c.name}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                )}
+              />
+            </Field>
+          </Flex>
+        ))}
+
+        <Separator size="4" />
 
         <Field label="Roles">
           <Controller

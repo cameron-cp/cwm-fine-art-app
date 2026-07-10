@@ -4,6 +4,7 @@ import { ContactForm } from "../contact-form";
 import {
   PARTY_RELATIONSHIP_LABELS,
   type Party,
+  type PartyAddressRow,
   type PartyRelationshipType,
   type PartyRole,
 } from "@/lib/schemas/party";
@@ -35,8 +36,13 @@ export default async function ContactDetailPage({
     .maybeSingle();
   if (!party) notFound();
 
-  const [{ data: roleRows }, { data: rels }] = await Promise.all([
+  const [{ data: roleRows }, { data: addressRows }, { data: rels }] = await Promise.all([
     supabase.from("party_roles").select("role").eq("party_id", id),
+    supabase
+      .from("party_addresses")
+      .select("*")
+      .eq("party_id", id)
+      .order("position"),
     supabase
       .from("party_relationships")
       .select(
@@ -46,6 +52,7 @@ export default async function ContactDetailPage({
   ]);
 
   const roles = (roleRows ?? []).map((r) => r.role as PartyRole);
+  const partyAddresses = (addressRows ?? []) as PartyAddressRow[];
   const relationships = (rels ?? []) as unknown as RelRow[];
 
   return (
@@ -57,7 +64,7 @@ export default async function ContactDetailPage({
         Edit the contact below. Relationships are shown read-only.
       </Text>
 
-      <ContactForm party={party as Party} roles={roles} />
+      <ContactForm party={party as Party} roles={roles} addresses={partyAddresses} />
 
       <Heading size="4" mt="7" mb="2">
         Relationships
