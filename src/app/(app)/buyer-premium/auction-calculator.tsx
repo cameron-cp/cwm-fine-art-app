@@ -107,7 +107,7 @@ export function AuctionCalculator() {
 
   return (
     <Flex direction="column" gap="5">
-      <Flex align="end" justify="between" gap="5" wrap="wrap">
+      <Flex align="start" justify="between" gap="5" wrap="wrap">
         <Flex direction="column" gap="1">
           <Text size="2" weight="medium">
             Auction house
@@ -186,11 +186,17 @@ export function AuctionCalculator() {
           </Text>
         </Flex>
 
-        <Flex gap="2">
-          <Button variant="soft" color="gray" onClick={reset}>
-            Reset
-          </Button>
-          <Button onClick={addRow}>Add lot</Button>
+        <Flex direction="column" gap="1">
+          {/* Spacer matching the sibling column labels so the buttons align with the controls, not the labels. */}
+          <Text size="2" weight="medium" aria-hidden style={{ visibility: "hidden" }}>
+            &nbsp;
+          </Text>
+          <Flex gap="2">
+            <Button variant="soft" color="gray" onClick={reset}>
+              Reset
+            </Button>
+            <Button onClick={addRow}>Add lot</Button>
+          </Flex>
         </Flex>
       </Flex>
 
