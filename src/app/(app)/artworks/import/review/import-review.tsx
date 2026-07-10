@@ -80,7 +80,7 @@ export function ImportReview({ draft, artists: initialArtists }: Props) {
       {showTitleWarning && (
         <Callout.Root color="amber">
           <Callout.Text>
-            Couldn't read a title from the PDF — please add one before saving.
+            Couldn&apos;t read a title from the PDF — please add one before saving.
           </Callout.Text>
         </Callout.Root>
       )}
