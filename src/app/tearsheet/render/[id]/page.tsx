@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { GALLERY_NAME } from "@/lib/brand";
 import { formatDimensions } from "@/lib/dimensions";
-import { publicEnv, getServerEnv } from "@/lib/env";
+import { getServerEnv } from "@/lib/env";
+import { getRenderServiceClient } from "@/lib/supabase/render-client";
 import type { Artwork } from "@/lib/schemas/artwork";
 import "./tearsheet.css";
 
@@ -11,15 +11,6 @@ export const dynamic = "force-dynamic";
 type ArtworkRow = Artwork & {
   artists: { name: string } | null;
 };
-
-function getServiceClient() {
-  const env = getServerEnv();
-  const key =
-    env.SUPABASE_SERVICE_ROLE_KEY ?? publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  return createClient(publicEnv.NEXT_PUBLIC_SUPABASE_URL, key, {
-    auth: { persistSession: false },
-  });
-}
 
 export default async function TearsheetRenderPage({
   params,
@@ -40,7 +31,7 @@ export default async function TearsheetRenderPage({
   if (token !== expected) notFound();
 
   const { id } = await params;
-  const supabase = getServiceClient();
+  const supabase = getRenderServiceClient();
 
   const { data, error } = await supabase
     .from("artworks")

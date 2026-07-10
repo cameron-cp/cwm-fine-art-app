@@ -4,6 +4,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/tearsheet/render(.*)", // Browserless hits this with a shared-secret token
+  "/invoice/render(.*)", // Browserless hits this with INVOICE_RENDER_SECRET
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

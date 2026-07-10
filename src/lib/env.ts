@@ -11,6 +11,9 @@ const serverSchema = z.object({
   CLERK_SECRET_KEY: z.string().min(1),
   BROWSERLESS_API_KEY: optionalSecret,
   TEARSHEET_RENDER_SECRET: optionalSecret,
+  // Separate from the tearsheet secret: the invoice render page exposes bank
+  // ABA / account numbers, so a tearsheet-secret leak must not reach invoices.
+  INVOICE_RENDER_SECRET: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
 });
 
@@ -34,6 +37,7 @@ export function getServerEnv() {
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     BROWSERLESS_API_KEY: process.env.BROWSERLESS_API_KEY,
     TEARSHEET_RENDER_SECRET: process.env.TEARSHEET_RENDER_SECRET,
+    INVOICE_RENDER_SECRET: process.env.INVOICE_RENDER_SECRET,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   });
 }

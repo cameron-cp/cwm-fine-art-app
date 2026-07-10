@@ -18,7 +18,7 @@ If V1 ships and she's using it daily, then we layer collectors + interests + pro
 
 ## Out of scope for V1
 
-- Collectors / contacts / CRM
+- ~~Collectors / contacts / CRM~~ — **now intentionally in scope** (see note below)
 - Interest tracking (collector ↔ artwork)
 - Ownership history / provenance chain
 - Exhibitions
@@ -27,6 +27,28 @@ If V1 ships and she's using it daily, then we layer collectors + interests + pro
 - Batch export (one PDF at a time is fine)
 
 When tempted to build any of the above, don't. Ship V1 first.
+
+### CRM / Party foundation — intentionally started (owner decision)
+
+The invoice feature required an editable, app-owned buyer store, so the **Party
+model** (`parties` + `party_roles` + `party_relationships`) plus **invoices** and
+**invoice settings** were built as migration `0007_parties_invoices.sql`. This is
+a deliberate, owner-approved exception to the "Collectors / contacts / CRM" gate
+above — recorded here so the two documents don't contradict each other.
+
+What shipped: Contacts CRUD (parties + role tags; relationships shown read-only,
+management UI is a fast-follow), an invoice generator (create/edit → PDF matching
+the CWFA Word doc verbatim, incl. all 10 T&C clauses), and a Settings page for the
+business header / wire details / T&C. Invoices snapshot everything at issue time
+(bill-to, per-work details, an invoice-owned image copy, and the business/
+remittance/T&C settings) so a re-print never changes. Money is exact integer cents
+(`formatInvoiceMoney`, never the whole-dollar `formatPriceCents`). Number
+allocation + insert + line items happen atomically in the `create_invoice` /
+`update_invoice` SECURITY DEFINER RPCs (execute revoked from anon).
+
+Still deferred: interest tracking, provenance chain, exhibitions, email flows,
+relationship-management UI, folding `artists` into `parties`, and the
+vault→parties seed import (buyers are typed as invoiced and accumulate).
 
 ## Stack
 
