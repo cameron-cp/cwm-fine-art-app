@@ -30,10 +30,22 @@ import {
 
 type ArtistOption = { id: string; name: string };
 
+// A place an artwork can sit: one party_addresses row, labelled by its owning party.
+export type AddressOption = {
+  id: string;
+  partyName: string;
+  label: string; // party_addresses.label, or "Address" when null
+  oneLine: string; // formatted address, comma-joined
+};
+
+// UI-only sentinel for the nullable location select (resolved to null before RHF/Zod).
+const NONE = "__none__";
+
 type SharedProps = {
   artists: ArtistOption[];
   hasPrimaryImage: boolean;
   mediumSuggestions?: string[];
+  addressOptions?: AddressOption[];
   submitLabel?: string;
 };
 
@@ -78,8 +90,10 @@ export function ArtworkForm(props: Props) {
     artists,
     hasPrimaryImage,
     mediumSuggestions = [],
+    addressOptions = [],
     submitLabel,
   } = props;
+  const addressGroups = groupAddressOptions(addressOptions);
   const artwork = "artwork" in props ? props.artwork : undefined;
   const initialValues =
     "initialValues" in props ? props.initialValues : undefined;
@@ -119,6 +133,7 @@ export function ArtworkForm(props: Props) {
         status: artwork.status,
         notes: artwork.notes,
         primary_image_path: artwork.primary_image_path,
+        current_party_address_id: artwork.current_party_address_id ?? null,
       }
     : isImport
     ? {
@@ -143,6 +158,7 @@ export function ArtworkForm(props: Props) {
         status: initialValues.status ?? "available",
         notes: initialValues.notes ?? null,
         primary_image_path: initialValues.primary_image_path ?? null,
+        current_party_address_id: initialValues.current_party_address_id ?? null,
       }
     : {
         artist_id: defaultArtistId ?? artists[0]?.id ?? "",
@@ -163,6 +179,7 @@ export function ArtworkForm(props: Props) {
         status: "available" as const,
         notes: null,
         primary_image_path: null,
+        current_party_address_id: null,
       };
 
   const {
@@ -482,6 +499,41 @@ export function ArtworkForm(props: Props) {
           </Field>
         </Flex>
 
+        <Field
+          label="Current location"
+          error={errors.current_party_address_id?.message}
+        >
+          <Controller
+            control={control}
+            name="current_party_address_id"
+            render={({ field }) => (
+              <Select.Root
+                value={(field.value as string | null) ?? NONE}
+                onValueChange={(v) => field.onChange(v === NONE ? null : v)}
+              >
+                <Select.Trigger placeholder="None" />
+                <Select.Content>
+                  <Select.Item value={NONE}>None</Select.Item>
+                  {addressGroups.map((group) => (
+                    <Select.Group key={group.partyName}>
+                      <Select.Label>{group.partyName}</Select.Label>
+                      {group.options.map((o) => (
+                        <Select.Item key={o.id} value={o.id}>
+                          {o.label} — {o.oneLine}
+                        </Select.Item>
+                      ))}
+                    </Select.Group>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            )}
+          />
+          <Text size="1" color="gray">
+            Where the work physically sits — a contact&apos;s address (e.g. a
+            collector&apos;s Storage or Freeport). Doesn&apos;t change ownership.
+          </Text>
+        </Field>
+
         <Field label="Internal notes" error={errors.notes?.message}>
           <TextArea {...register("notes")} rows={3} placeholder="Won't appear on tearsheet" />
         </Field>
@@ -531,6 +583,19 @@ export function ArtworkForm(props: Props) {
       </Flex>
     </form>
   );
+}
+
+// Group address options by their owning party for a sectioned Select.
+function groupAddressOptions(
+  options: AddressOption[],
+): { partyName: string; options: AddressOption[] }[] {
+  const byParty = new Map<string, AddressOption[]>();
+  for (const o of options) {
+    const arr = byParty.get(o.partyName) ?? [];
+    arr.push(o);
+    byParty.set(o.partyName, arr);
+  }
+  return Array.from(byParty, ([partyName, opts]) => ({ partyName, options: opts }));
 }
 
 function Field({

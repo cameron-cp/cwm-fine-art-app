@@ -1,5 +1,6 @@
 import { Callout, Container, Heading } from "@radix-ui/themes";
 import Link from "next/link";
+import { fetchAddressOptions } from "../address-options";
 import { ArtworkForm } from "../artwork-form";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
@@ -10,10 +11,12 @@ export default async function NewArtworkPage({
 }) {
   const { artist: artistParam } = await searchParams;
   const supabase = getSupabaseServer();
-  const [{ data: artistsData }, { data: mediaData }] = await Promise.all([
-    supabase.from("artists").select("id, name").order("name"),
-    supabase.from("artworks").select("medium").not("medium", "is", null),
-  ]);
+  const [{ data: artistsData }, { data: mediaData }, addressOptions] =
+    await Promise.all([
+      supabase.from("artists").select("id, name").order("name"),
+      supabase.from("artworks").select("medium").not("medium", "is", null),
+      fetchAddressOptions(supabase),
+    ]);
   const artists = artistsData ?? [];
   const mediumSuggestions = uniqueSorted(
     (mediaData ?? []).map((r) => r.medium as string | null).filter((m): m is string => !!m),
@@ -40,6 +43,7 @@ export default async function NewArtworkPage({
           artists={artists}
           hasPrimaryImage={false}
           mediumSuggestions={mediumSuggestions}
+          addressOptions={addressOptions}
           defaultArtistId={
             artistParam && artists.some((a) => a.id === artistParam)
               ? artistParam

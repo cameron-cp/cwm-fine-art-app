@@ -1,6 +1,7 @@
 import { Box, Container, Flex, Heading, Separator, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { fetchAddressOptions } from "../address-options";
 import { ArtworkForm } from "../artwork-form";
 import { ConditionReports, type ConditionReportWithUrl } from "./condition-reports";
 import { GenerateTearsheetButton } from "./generate-tearsheet-button";
@@ -28,6 +29,7 @@ export default async function EditArtworkPage({
     { data: mediaData },
     { data: imagesData },
     { data: reportsData },
+    addressOptions,
   ] = await Promise.all([
     supabase.from("artworks").select("*").eq("id", id).maybeSingle(),
     supabase.from("artists").select("id, name").order("name"),
@@ -42,6 +44,7 @@ export default async function EditArtworkPage({
       .select("*")
       .eq("artwork_id", id)
       .order("created_at", { ascending: false }),
+    fetchAddressOptions(supabase),
   ]);
 
   if (error || !artworkData) notFound();
@@ -110,6 +113,7 @@ export default async function EditArtworkPage({
             artists={artists}
             hasPrimaryImage={!!artwork.primary_image_path}
             mediumSuggestions={mediumSuggestions}
+            addressOptions={addressOptions}
           />
         </Box>
       </Flex>
