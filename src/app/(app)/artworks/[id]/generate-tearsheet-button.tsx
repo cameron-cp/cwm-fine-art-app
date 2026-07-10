@@ -3,9 +3,19 @@
 import { Button, Callout, Flex } from "@radix-ui/themes";
 import { useState } from "react";
 
-type Props = { artworkId: string; title: string };
+type Props = {
+  artworkId: string;
+  title: string;
+  size?: "1" | "2" | "3";
+  variant?: "solid" | "soft";
+};
 
-export function GenerateTearsheetButton({ artworkId, title }: Props) {
+export function GenerateTearsheetButton({
+  artworkId,
+  title,
+  size = "3",
+  variant = "solid",
+}: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +46,7 @@ export function GenerateTearsheetButton({ artworkId, title }: Props) {
 
   return (
     <Flex direction="column" gap="2">
-      <Button onClick={onClick} loading={pending} size="3">
+      <Button onClick={onClick} loading={pending} size={size} variant={variant}>
         Generate Tearsheet
       </Button>
       {error && (

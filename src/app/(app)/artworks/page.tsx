@@ -1,6 +1,7 @@
-import { Badge, Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
+import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import Image from "next/image";
 import Link from "next/link";
+import { StatusBadge } from "./status-badge";
 import type { Artwork } from "@/lib/schemas/artwork";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { formatPriceCents, signedArtworkUrls } from "@/lib/supabase/storage";
@@ -112,19 +113,5 @@ export default async function ArtworksPage() {
         </Table.Root>
       )}
     </Container>
-  );
-}
-
-function StatusBadge({ status }: { status: Artwork["status"] }) {
-  const map: Record<Artwork["status"], { color: "green" | "amber" | "gray"; label: string }> = {
-    available: { color: "green", label: "Available" },
-    on_hold: { color: "amber", label: "On hold" },
-    sold: { color: "gray", label: "Sold" },
-  };
-  const { color, label } = map[status];
-  return (
-    <Badge color={color} variant="soft">
-      {label}
-    </Badge>
   );
 }

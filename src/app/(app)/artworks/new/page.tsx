@@ -3,7 +3,12 @@ import Link from "next/link";
 import { ArtworkForm } from "../artwork-form";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
-export default async function NewArtworkPage() {
+export default async function NewArtworkPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ artist?: string }>;
+}) {
+  const { artist: artistParam } = await searchParams;
   const supabase = getSupabaseServer();
   const [{ data: artistsData }, { data: mediaData }] = await Promise.all([
     supabase.from("artists").select("id, name").order("name"),
@@ -35,6 +40,11 @@ export default async function NewArtworkPage() {
           artists={artists}
           hasPrimaryImage={false}
           mediumSuggestions={mediumSuggestions}
+          defaultArtistId={
+            artistParam && artists.some((a) => a.id === artistParam)
+              ? artistParam
+              : undefined
+          }
         />
       )}
     </Container>
