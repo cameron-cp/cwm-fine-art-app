@@ -9,7 +9,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { mkdtemp, rm, writeFile, mkdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { runSync } from "../sync";
+import { dedupeEntities, runSync } from "../sync";
+import type { ParsedEntity } from "../types";
 
 type Row = Record<string, unknown>;
 
@@ -252,6 +253,86 @@ async function buildFixtureVault(): Promise<string> {
   await writeFile(path.join(wiki, "_index.md"), `# index — should be skipped`);
   return root;
 }
+
+function makeEntity(over: Partial<ParsedEntity> & Pick<ParsedEntity, "entity_id" | "file_path_relative">): ParsedEntity {
+  return {
+    entity_type: over.entity_id.split("/")[0],
+    slug: over.entity_id.split("/")[1] ?? "",
+    title: null,
+    frontmatter: {},
+    body_md: "",
+    sensitivity: null,
+    tags: [],
+    file_mtime: "2024-01-01T00:00:00.000Z",
+    file_sha: "sha",
+    edges: [],
+    ...over,
+  };
+}
+
+describe("dedupeEntities — nested-file id collision guard", () => {
+  it("keeps the first of a colliding pair and reports the offending file path", () => {
+    // Both files live under clients/ but in different subdirs, so slug (filename)
+    // collapses them to the same entity_id — the latent bug that aborts the swap.
+    const entities = [
+      makeEntity({ entity_id: "clients/notes", file_path_relative: "wiki/clients/a/notes.md" }),
+      makeEntity({ entity_id: "clients/notes", file_path_relative: "wiki/clients/b/notes.md" }),
+      makeEntity({ entity_id: "clients/howard", file_path_relative: "wiki/clients/howard.md" }),
+    ];
+    const { entities: unique, duplicateErrors } = dedupeEntities(entities);
+
+    // Exactly one 'clients/notes' survives (the first) → the swap's PK can't abort.
+    expect(unique.map((e) => e.entity_id).sort()).toEqual(["clients/howard", "clients/notes"]);
+    expect(unique.find((e) => e.entity_id === "clients/notes")?.file_path_relative).toBe("wiki/clients/a/notes.md");
+
+    // The collision is surfaced (not silently swallowed), naming BOTH files.
+    expect(duplicateErrors).toHaveLength(1);
+    expect(duplicateErrors[0].error_kind).toBe("duplicate_entity_id");
+    expect(duplicateErrors[0].file_path_relative).toBe("wiki/clients/b/notes.md");
+    expect(duplicateErrors[0].message).toContain("wiki/clients/a/notes.md");
+  });
+
+  it("no duplicates → passthrough with no errors", () => {
+    const entities = [
+      makeEntity({ entity_id: "clients/a", file_path_relative: "wiki/clients/a.md" }),
+      makeEntity({ entity_id: "clients/b", file_path_relative: "wiki/clients/b.md" }),
+    ];
+    const { entities: unique, duplicateErrors } = dedupeEntities(entities);
+    expect(unique).toHaveLength(2);
+    expect(duplicateErrors).toHaveLength(0);
+  });
+});
+
+describe("runSync collapses a nested-file collision instead of aborting", () => {
+  let vaultPath: string;
+  beforeAll(async () => {
+    vaultPath = await mkdtemp(path.join(tmpdir(), "vault-collide-"));
+    await mkdir(path.join(vaultPath, "wiki", "clients", "sub"), { recursive: true });
+    await writeFile(
+      path.join(vaultPath, "wiki", "clients", "howard.md"),
+      `---\ntitle: Howard\n---\n\n# Howard\n`,
+    );
+    // Nested file whose slug collides with clients/howard → 'clients/howard'.
+    await writeFile(
+      path.join(vaultPath, "wiki", "clients", "sub", "howard.md"),
+      `---\ntitle: Howard Dup\n---\n\n# Howard Dup\n`,
+    );
+  });
+  afterAll(async () => {
+    await rm(vaultPath, { recursive: true, force: true });
+  });
+
+  it("inserts the id once and logs a duplicate_entity_id error", async () => {
+    const fake = makeFakeSupabase();
+    const result = await runSync({ vaultPath, supabase: fake.client });
+    // One survives (not aborted, not duplicated).
+    expect(fake.state.entities.filter((e: Row) => e.entity_id === "clients/howard")).toHaveLength(1);
+    expect(result.entities_upserted).toBe(1);
+    // The collision is recorded for the operator.
+    const dupErrors = fake.state.errors.filter((e: Row) => e.error_kind === "duplicate_entity_id");
+    expect(dupErrors).toHaveLength(1);
+  });
+});
 
 describe("runSync end-to-end against a fixture vault", () => {
   let vaultPath: string;

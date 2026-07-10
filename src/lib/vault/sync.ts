@@ -167,6 +167,37 @@ function countAsymmetries(
   return asymmetries;
 }
 
+// Preflight: entity_id is `${entityType}/${slug}` where slug is only the
+// filename (not the path within the section), so nested files collapse to the
+// same id — e.g. wiki/clients/a/notes.md and wiki/clients/b/notes.md both become
+// 'clients/notes'. The staging table has no PK and vault_swap_from_staging'
+// `insert into vault_entities` has no ON CONFLICT, so a duplicate id would abort
+// the ENTIRE sync on the production PK. Collapse duplicates here (keep the first
+// seen) and log the offending file paths so the collision is fixable by rename,
+// rather than silently swallowed or fatally aborting.
+export function dedupeEntities(entities: ParsedEntity[]): {
+  entities: ParsedEntity[];
+  duplicateErrors: ParseError[];
+} {
+  const byId = new Map<string, ParsedEntity>();
+  const out: ParsedEntity[] = [];
+  const duplicateErrors: ParseError[] = [];
+  for (const e of entities) {
+    const existing = byId.get(e.entity_id);
+    if (existing) {
+      duplicateErrors.push({
+        file_path_relative: e.file_path_relative,
+        error_kind: "duplicate_entity_id",
+        message: `entity_id '${e.entity_id}' collides with '${existing.file_path_relative}'; this file was skipped. Rename so the filename (slug) is unique within '${e.entity_type}'.`,
+      });
+      continue;
+    }
+    byId.set(e.entity_id, e);
+    out.push(e);
+  }
+  return { entities: out, duplicateErrors };
+}
+
 export type RunSyncOptions = {
   vaultPath: string;
   supabase: SupabaseClient;
@@ -252,10 +283,19 @@ export async function runSync(options: RunSyncOptions): Promise<SyncResultSummar
 
   log(`parsed ${entities.length} entities (${filesFailed} files with errors) from ${filesSeen} files`);
 
+  // Preflight duplicate-id collapse (see dedupeEntities). Do this BEFORE building
+  // edges / staging so a nested-file id collision can't abort the atomic swap.
+  const { entities: uniqueEntities, duplicateErrors } = dedupeEntities(entities);
+  if (duplicateErrors.length) {
+    filesFailed += duplicateErrors.length;
+    errors.push(...duplicateErrors);
+    log(`skipped ${duplicateErrors.length} file(s) with duplicate entity_ids`);
+  }
+
   // Build edge payloads, resolving dst_resolved against the in-memory snapshot.
-  const entitiesById = new Map(entities.map((e) => [e.entity_id, e]));
+  const entitiesById = new Map(uniqueEntities.map((e) => [e.entity_id, e]));
   const edges: EdgePayload[] = [];
-  for (const ent of entities) {
+  for (const ent of uniqueEntities) {
     for (const edge of ent.edges) {
       edges.push({
         src_entity_id: ent.entity_id,
@@ -269,7 +309,7 @@ export async function runSync(options: RunSyncOptions): Promise<SyncResultSummar
 
   // Log unresolved-wikilink errors (informational, not fatal).
   const unresolvedSamples: ParseError[] = [];
-  for (const ent of entities) {
+  for (const ent of uniqueEntities) {
     for (const edge of ent.edges) {
       if (!entitiesById.has(edge.dst_entity_id)) {
         unresolvedSamples.push({
@@ -282,8 +322,8 @@ export async function runSync(options: RunSyncOptions): Promise<SyncResultSummar
   }
   errors.push(...unresolvedSamples);
 
-  log(`bulk-inserting ${entities.length} entities + ${edges.length} edges into staging`);
-  const entitiesUpserted = await bulkInsertEntities(supabase, entities);
+  log(`bulk-inserting ${uniqueEntities.length} entities + ${edges.length} edges into staging`);
+  const entitiesUpserted = await bulkInsertEntities(supabase, uniqueEntities);
   const edgesUpserted = await bulkInsertEdges(supabase, edges);
 
   log(`atomic swap`);

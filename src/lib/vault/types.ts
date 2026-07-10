@@ -27,7 +27,8 @@ export type ParseError = {
     | "yaml_parse"
     | "read_failed"
     | "malformed_relations"
-    | "unresolved_wikilink";
+    | "unresolved_wikilink"
+    | "duplicate_entity_id";
   message: string;
 };
 
