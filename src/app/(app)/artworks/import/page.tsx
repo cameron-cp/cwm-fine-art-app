@@ -89,7 +89,7 @@ export default function ImportArtworkPage() {
                 Reading tearsheet…
               </Text>
               <Text size="2" color="gray">
-                About 5–8 seconds. Don't close this tab.
+                About 5–8 seconds. Don&apos;t close this tab.
               </Text>
             </>
           ) : (

@@ -11,7 +11,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   HOUSES,
   type AuctionHouseId,
@@ -71,23 +71,24 @@ export function AuctionCalculator() {
     setTrackId(nextLoc.tracks[0].id);
   }
 
-  const computed = useMemo(() => {
-    const parsed = rows.map((r) => ({ ...r, hammerNum: parseValue(r.hammer) }));
-    const totalHammer = parsed.reduce((s, r) => s + r.hammerNum, 0);
-    const perLotFees = parsed.map((r) => calculateTieredFee(r.hammerNum, track.tiers));
-    const perLotTotal = perLotFees.reduce((s, p) => s + p, 0);
-    const aggregateTotal = calculateTieredFee(totalHammer, track.tiers);
-    const totalBp = mode === "per_lot" ? perLotTotal : aggregateTotal;
-    return {
-      parsed,
-      perLotFees,
-      totalHammer,
-      totalBp,
-      perLotTotal,
-      aggregateTotal,
-      totalPayable: totalHammer + totalBp,
-    };
-  }, [rows, track, mode]);
+  // No manual useMemo: React Compiler memoizes this, and the calc is trivial
+  // (a few maps over a handful of rows). Manual memoization here couldn't be
+  // preserved by the compiler (react-hooks/preserve-manual-memoization).
+  const parsedRows = rows.map((r) => ({ ...r, hammerNum: parseValue(r.hammer) }));
+  const totalHammer = parsedRows.reduce((s, r) => s + r.hammerNum, 0);
+  const perLotFees = parsedRows.map((r) => calculateTieredFee(r.hammerNum, track.tiers));
+  const perLotTotal = perLotFees.reduce((s, p) => s + p, 0);
+  const aggregateTotal = calculateTieredFee(totalHammer, track.tiers);
+  const totalBp = mode === "per_lot" ? perLotTotal : aggregateTotal;
+  const computed = {
+    parsed: parsedRows,
+    perLotFees,
+    totalHammer,
+    totalBp,
+    perLotTotal,
+    aggregateTotal,
+    totalPayable: totalHammer + totalBp,
+  };
 
   function updateRow(id: string, patch: Partial<Row>) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));

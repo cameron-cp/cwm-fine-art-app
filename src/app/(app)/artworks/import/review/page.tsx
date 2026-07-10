@@ -11,6 +11,13 @@ const queryParamsSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
+// Kept out of the component body so the react-hooks/purity rule doesn't flag the
+// clock read: this is a per-request Server Component, so reading "now" here is
+// correct and intended, not an unstable render.
+function isDraftExpired(expiresAt: string): boolean {
+  return new Date(expiresAt).getTime() < Date.now();
+}
+
 export default async function ReviewImportPage({
   searchParams,
 }: {
@@ -37,7 +44,7 @@ export default async function ReviewImportPage({
   if (draftErr || !draftRow) {
     return <ExpiredPanel />;
   }
-  if (new Date(draftRow.expires_at).getTime() < Date.now()) {
+  if (isDraftExpired(draftRow.expires_at)) {
     return <ExpiredPanel />;
   }
 
@@ -67,7 +74,7 @@ export default async function ReviewImportPage({
       </Heading>
       <Text size="2" color="gray" mb="5" as="p">
         Claude extracted these fields from your tearsheet. Review, edit anything
-        that's wrong, then save.
+        that&apos;s wrong, then save.
       </Text>
 
       <ImportReview draft={parsed.data} artists={artists} />
@@ -83,7 +90,7 @@ function ExpiredPanel() {
       </Heading>
       <Callout.Root color="amber">
         <Callout.Text>
-          This import draft expired or doesn't exist. Drafts are kept for 30
+          This import draft expired or doesn&apos;t exist. Drafts are kept for 30
           minutes —{" "}
           <Link
             href="/artworks/import"
