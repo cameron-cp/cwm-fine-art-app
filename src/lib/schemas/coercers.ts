@@ -10,6 +10,13 @@ export const optionalText = z.preprocess(
   z.string().trim().min(1).nullable(),
 );
 
+// "" | null | undefined → null; otherwise a UUID. For nullable FK selects (a Radix
+// Select resolves its "__none__" sentinel to null before this ever sees it).
+export const optionalUuid = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? null : v),
+  z.string().uuid().nullable(),
+);
+
 // "" → null; otherwise an integer year.
 export const optionalYear = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? null : Number(v)),

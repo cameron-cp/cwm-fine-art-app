@@ -6,18 +6,36 @@ import type { Artwork } from "@/lib/schemas/artwork";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { formatPriceCents, signedArtworkUrls } from "@/lib/supabase/storage";
 
+type PartyRef = { display_name: string };
+type AddressRef = { label: string | null; party: PartyRef | PartyRef[] | null };
+
 type Row = Pick<
   Artwork,
   "id" | "title" | "year" | "status" | "price_cents" | "currency" | "primary_image_path"
 > & {
   artists: { name: string } | null;
+  current_party_address: AddressRef | AddressRef[] | null;
 };
+
+// "Party — label" for the current location, or "—". Tolerates the untyped embed
+// coming back as either an object or a single-element array.
+function locationLabel(row: Row): string {
+  const pa = Array.isArray(row.current_party_address)
+    ? row.current_party_address[0]
+    : row.current_party_address;
+  if (!pa) return "—";
+  const party = Array.isArray(pa.party) ? pa.party[0] : pa.party;
+  const label = pa.label ?? "Address";
+  return party?.display_name ? `${party.display_name} — ${label}` : label;
+}
 
 export default async function ArtworksPage() {
   const supabase = getSupabaseServer();
   const { data, error } = await supabase
     .from("artworks")
-    .select("id, title, year, status, price_cents, currency, primary_image_path, artists(name)")
+    .select(
+      "id, title, year, status, price_cents, currency, primary_image_path, artists(name), current_party_address:party_addresses!artworks_current_party_address_id_fkey(label, party:parties(display_name))",
+    )
     .order("created_at", { ascending: false });
 
   const artworks = (data ?? []) as unknown as Row[];
@@ -68,6 +86,7 @@ export default async function ArtworksPage() {
               <Table.ColumnHeaderCell>Artist</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Year</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Location</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell align="right">Price</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
@@ -102,6 +121,11 @@ export default async function ArtworksPage() {
                   <Table.Cell>{a.year ?? "—"}</Table.Cell>
                   <Table.Cell>
                     <StatusBadge status={a.status} />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text size="2" color={locationLabel(a) === "—" ? "gray" : undefined}>
+                      {locationLabel(a)}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell align="right">
                     {formatPriceCents(a.price_cents, a.currency)}

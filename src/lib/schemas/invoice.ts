@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   optionalPriceCents,
   optionalText,
+  optionalUuid,
   optionalYear,
   requiredPriceCents,
 } from "./coercers";
@@ -20,18 +21,13 @@ export const CURRENCY_SYMBOLS: Record<InvoiceCurrency, string> = {
   EUR: "€",
 };
 
-const nullableUuid = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? null : v),
-  z.string().uuid().nullable(),
-);
-
 // Provenance lines as objects for useFieldArray; flattened to text[] before persist.
 export const provenanceLineSchema = z.object({
   value: z.string().trim().min(1, "Empty entry"),
 });
 
 export const invoiceLineItemSchema = z.object({
-  artwork_id: nullableUuid,
+  artwork_id: optionalUuid,
   position: z.number().int().min(0).default(0),
   artist_name: optionalText,
   title: optionalText,
@@ -47,9 +43,9 @@ export const invoiceLineItemSchema = z.object({
 });
 
 export const invoiceSchema = z.object({
-  buyer_party_id: nullableUuid,
-  on_behalf_of_party_id: nullableUuid,
-  seller_party_id: nullableUuid,
+  buyer_party_id: optionalUuid,
+  on_behalf_of_party_id: optionalUuid,
+  seller_party_id: optionalUuid,
 
   // Bill-to snapshot (editable after prefill from the buyer party).
   bill_to_name: z.string().trim().min(1, "Bill-to name is required"),

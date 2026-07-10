@@ -20,36 +20,73 @@ function partyColumns(data: ParsedParty) {
   };
 }
 
-// Replace the full address set for a party (delete + reinsert). Positions
-// reflect array order; is_primary is normalized by partySchema's transform.
-async function replaceAddresses(
+// Sync a party's addresses while KEEPING existing rows' ids stable. This is the
+// load-bearing guarantee behind artworks.current_party_address_id: the old
+// delete-all-then-reinsert minted new uuids every save, which (via on delete set null)
+// would null every artwork FK pointing at this party on any contact edit. Here we
+// delete only removed rows, update the rest in place, and insert genuinely new ones.
+// Positions are recomputed from array order for every row so reordering/removal stays
+// consistent with the `.order("position")` reads.
+async function syncAddresses(
   supabase: ReturnType<typeof getSupabaseServer>,
   partyId: string,
   addresses: ParsedParty["addresses"],
 ): Promise<{ error: string } | null> {
-  const { error: delErr } = await supabase
+  const rows = addresses.map((a, position) => ({
+    id: a.id,
+    party_id: partyId,
+    label: a.label,
+    line1: a.line1,
+    line2: a.line2,
+    city: a.city,
+    region: a.region,
+    postal_code: a.postal_code,
+    country_code: a.country_code,
+    is_primary: a.is_primary,
+    position,
+  }));
+
+  // Delete rows that existed before but are no longer submitted.
+  const { data: existing, error: exErr } = await supabase
     .from("party_addresses")
-    .delete()
+    .select("id")
     .eq("party_id", partyId);
-  if (delErr) return { error: delErr.message };
+  if (exErr) return { error: exErr.message };
 
-  if (!addresses.length) return null;
-
-  const { error } = await supabase.from("party_addresses").insert(
-    addresses.map((a, position) => ({
-      party_id: partyId,
-      label: a.label,
-      line1: a.line1,
-      line2: a.line2,
-      city: a.city,
-      region: a.region,
-      postal_code: a.postal_code,
-      country_code: a.country_code,
-      is_primary: a.is_primary,
-      position,
-    })),
+  const submittedIds = new Set(
+    rows.map((r) => r.id).filter((id): id is string => Boolean(id)),
   );
-  return error ? { error: error.message } : null;
+  const toDelete = (existing ?? [])
+    .map((r) => r.id as string)
+    .filter((id) => !submittedIds.has(id));
+  if (toDelete.length) {
+    const { error } = await supabase.from("party_addresses").delete().in("id", toDelete);
+    if (error) return { error: error.message };
+  }
+
+  // Clear all primaries first, so flipping the primary between two surviving rows can't
+  // trip the partial unique index (party_addresses_one_primary_idx) mid-statement.
+  const { error: clearErr } = await supabase
+    .from("party_addresses")
+    .update({ is_primary: false })
+    .eq("party_id", partyId);
+  if (clearErr) return { error: clearErr.message };
+
+  // Update rows that carry an id (id preserved); insert rows without one.
+  const updates = rows.filter((r) => r.id);
+  const inserts = rows
+    .filter((r) => !r.id)
+    .map(({ id: _drop, ...rest }) => rest); // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  if (updates.length) {
+    const { error } = await supabase.from("party_addresses").upsert(updates);
+    if (error) return { error: error.message };
+  }
+  if (inserts.length) {
+    const { error } = await supabase.from("party_addresses").insert(inserts);
+    if (error) return { error: error.message };
+  }
+  return null;
 }
 
 export async function createParty(input: unknown): Promise<Result<{ id: string }>> {
@@ -73,7 +110,7 @@ export async function createParty(input: unknown): Promise<Result<{ id: string }
     if (roleErr) return { error: roleErr.message };
   }
 
-  const addrErr = await replaceAddresses(supabase, data.id, parsed.data.addresses);
+  const addrErr = await syncAddresses(supabase, data.id, parsed.data.addresses);
   if (addrErr) return addrErr;
 
   revalidatePath("/contacts");
@@ -109,7 +146,7 @@ export async function updateParty(
     if (roleErr) return { error: roleErr.message };
   }
 
-  const addrErr = await replaceAddresses(supabase, id, parsed.data.addresses);
+  const addrErr = await syncAddresses(supabase, id, parsed.data.addresses);
   if (addrErr) return addrErr;
 
   revalidatePath("/contacts");

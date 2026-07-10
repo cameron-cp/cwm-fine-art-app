@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { optionalPriceCents, optionalText, optionalYear } from "./coercers";
+import {
+  optionalPriceCents,
+  optionalText,
+  optionalUuid,
+  optionalYear,
+} from "./coercers";
 
 // Artwork-specific coercer (inches). Shared coercers live in ./coercers.
 const optionalInches = z.preprocess(
@@ -39,6 +44,9 @@ export const artworkSchema = z.object({
   status: artworkStatus.default("available"),
   notes: optionalText,
   primary_image_path: optionalText,
+  // Where the work physically sits: a party_addresses row (nullable). Orthogonal to
+  // ownership. The picker's "__none__" sentinel is resolved to null before validation.
+  current_party_address_id: optionalUuid,
 });
 
 export type ArtworkFormInput = z.input<typeof artworkSchema>;
