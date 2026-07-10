@@ -1,0 +1,213 @@
+/* Invoice template — content matches the CWFA Word document. EB Garamond body,
+   running footer (business · invoice no · page N of M) on every page. */
+
+@page {
+  size: Letter;
+  margin: 0.8in 0.8in 0.95in 0.8in;
+
+  @bottom-center {
+    content: string(invfoot) " · Page " counter(page) " of " counter(pages);
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 9pt;
+    color: #555;
+    padding-bottom: 0.25in;
+  }
+}
+
+:root {
+  --inv-fg: #111;
+  --inv-muted: #5d5d5d;
+  --inv-rule: #cfcfcf;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: white;
+  color: var(--inv-fg);
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.inv-page,
+.inv-page * {
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+}
+
+/* Off-screen element whose text feeds the running @page footer. */
+.inv-footer-src {
+  string-set: invfoot content();
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.inv-header {
+  margin-bottom: 0.3in;
+}
+.inv-brand {
+  font-weight: 700;
+  font-size: 15pt;
+  letter-spacing: 0.01em;
+}
+.inv-legal {
+  font-weight: 600;
+  font-size: 11pt;
+}
+.inv-addr {
+  font-size: 10.5pt;
+  color: var(--inv-muted);
+}
+
+.inv-doc-title {
+  font-size: 16pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0.1in 0 0.12in 0;
+  border-bottom: 1.5px solid var(--inv-fg);
+  padding-bottom: 0.06in;
+}
+
+.inv-meta {
+  border-collapse: collapse;
+  margin-bottom: 0.15in;
+}
+.inv-meta td {
+  padding: 0.02in 0.3in 0.02in 0;
+  font-size: 11pt;
+  vertical-align: top;
+}
+
+.inv-section {
+  margin-top: 0.22in;
+  break-inside: avoid;
+}
+
+.inv-h {
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.08in 0;
+  border-bottom: 0.75px solid var(--inv-rule);
+  padding-bottom: 0.03in;
+  break-after: avoid;
+}
+
+.inv-kv,
+.inv-charges {
+  border-collapse: collapse;
+  width: 100%;
+}
+.inv-kv td {
+  padding: 0.02in 0.3in 0.02in 0;
+  font-size: 11pt;
+  vertical-align: top;
+}
+.inv-k {
+  color: var(--inv-muted);
+  white-space: nowrap;
+  width: 1.6in;
+}
+.inv-pre {
+  white-space: pre-line;
+}
+
+.inv-work {
+  display: flex;
+  gap: 0.25in;
+  margin: 0.14in 0;
+  break-inside: avoid;
+}
+.inv-work-img {
+  flex: 0 0 2.2in;
+}
+.inv-work-img img {
+  max-width: 2.2in;
+  max-height: 2.2in;
+  object-fit: contain;
+  display: block;
+}
+.inv-work-img-empty {
+  width: 2.2in;
+  height: 1.6in;
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--inv-muted);
+  font-size: 10pt;
+}
+.inv-work-body {
+  flex: 1 1 auto;
+}
+.inv-work-artist {
+  font-weight: 700;
+  font-size: 12pt;
+}
+.inv-work-title {
+  font-size: 11pt;
+}
+.inv-work-title em {
+  font-style: italic;
+}
+.inv-line {
+  font-size: 11pt;
+  margin: 0;
+}
+.inv-work-amount {
+  margin-top: 0.06in;
+  font-weight: 700;
+}
+
+.inv-charges td {
+  padding: 0.03in 0;
+  font-size: 11pt;
+}
+.inv-amt {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.inv-total td {
+  font-weight: 700;
+  border-top: 1px solid var(--inv-fg);
+  font-size: 12pt;
+  padding-top: 0.06in;
+}
+
+.inv-statement {
+  margin: 0.16in 0;
+  font-size: 11pt;
+}
+
+.inv-para {
+  margin: 0.06in 0 0.1in 0;
+  font-size: 11pt;
+}
+
+.inv-terms {
+  margin-top: 0.28in;
+}
+.inv-clauses {
+  margin: 0;
+  padding-left: 0.22in;
+}
+.inv-clause {
+  font-size: 10.5pt;
+  margin: 0.06in 0;
+  line-height: 1.4;
+  break-inside: avoid;
+}
+.inv-clause-title {
+  font-weight: 700;
+}
+
+.render-error {
+  padding: 24px;
+  font-family: var(--font-noto-sans), Helvetica, Arial, sans-serif;
+  color: #b00;
+}

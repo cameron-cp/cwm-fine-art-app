@@ -21,6 +21,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link href="/artworks" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
                       Artworks
                     </Link>
+                    <Link href="/contacts" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
+                      Contacts
+                    </Link>
+                    <Link href="/invoices" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
+                      Invoices
+                    </Link>
+                    <Link href="/settings" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
+                      Settings
+                    </Link>
                     <Link href="/calculator" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
                       Commission
                     </Link>

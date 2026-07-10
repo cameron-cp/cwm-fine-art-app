@@ -1,15 +1,7 @@
 import { z } from "zod";
+import { optionalPriceCents, optionalText, optionalYear } from "./coercers";
 
-const optionalText = z.preprocess(
-  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
-  z.string().trim().min(1).nullable(),
-);
-
-const optionalYear = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
-  z.number().int().min(1).max(3000).nullable(),
-);
-
+// Artwork-specific coercer (inches). Shared coercers live in ./coercers.
 const optionalInches = z.preprocess(
   (v) => {
     if (v === "" || v === null || v === undefined) return null;
@@ -17,23 +9,6 @@ const optionalInches = z.preprocess(
     return Number.isFinite(n) ? n : null;
   },
   z.number().min(0).max(10000).nullable(),
-);
-
-// Accept "1,200", "1200.50", "$1,200" etc. Stored as integer cents.
-const optionalPriceCents = z.preprocess(
-  (v) => {
-    if (v === "" || v === null || v === undefined) return null;
-    if (typeof v === "number") return Math.round(v * 100);
-    if (typeof v === "string") {
-      const cleaned = v.replace(/[^0-9.]/g, "");
-      if (cleaned === "") return null;
-      const num = Number(cleaned);
-      if (!Number.isFinite(num)) return null;
-      return Math.round(num * 100);
-    }
-    return v;
-  },
-  z.number().int().min(0).nullable(),
 );
 
 export const artworkStatus = z.enum(["available", "on_hold", "sold"]);
