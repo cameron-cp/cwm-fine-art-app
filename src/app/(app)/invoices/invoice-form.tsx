@@ -16,6 +16,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { formatAddress } from "@/lib/address";
+import { countryName } from "@/lib/countries";
 import { formatInvoiceMoney } from "@/lib/money";
 import {
   CURRENCY_SYMBOLS,
@@ -42,12 +44,25 @@ export type ArtworkOption = {
   dimensions_text: string | null;
 };
 
+export type PartyAddressOption = {
+  id: string;
+  label: string | null;
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postal_code: string | null;
+  country_code: string | null;
+  is_primary: boolean;
+  position: number;
+};
+
 export type PartyOption = {
   id: string;
   display_name: string;
   legal_name: string | null;
   email: string | null;
-  address: string | null;
+  addresses: PartyAddressOption[];
 };
 
 type Props = {
@@ -95,6 +110,13 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [mismatch, setMismatch] = useState<Record<number, string>>({});
+  // Addresses for the currently-selected buyer, so the bill-to picker can offer
+  // the residence / office / freeport etc. (collectors hold works in many places).
+  const [buyerAddresses, setBuyerAddresses] = useState<PartyAddressOption[]>(
+    () =>
+      parties.find((p) => p.id === invoice?.values.buyer_party_id)?.addresses ??
+      [],
+  );
 
   const {
     register,
@@ -144,12 +166,23 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
     const partyId = id === NONE ? null : id;
     setValue("buyer_party_id", partyId);
     const party = parties.find((p) => p.id === partyId);
+    setBuyerAddresses(party?.addresses ?? []);
     if (party) {
       // Prefill bill-to snapshot (editable afterward).
       setValue("bill_to_name", party.legal_name || party.display_name);
       if (party.email) setValue("bill_to_email", party.email);
-      if (party.address) setValue("bill_to_address", party.address);
+      // Default the bill-to address to the primary/first (options.ts sorts it
+      // first). She can switch to another location below or edit the text.
+      const primary = party.addresses[0];
+      if (primary) setValue("bill_to_address", formatAddress(primary));
     }
+  }
+
+  // Short one-line description for the address picker options.
+  function addressSummary(a: PartyAddressOption): string {
+    const parts = [a.city, a.region, countryName(a.country_code)].filter(Boolean);
+    const where = parts.join(", ") || a.line1;
+    return a.label ? `${a.label} — ${where}` : where;
   }
 
   function onPickArtwork(index: number, id: string) {
@@ -239,7 +272,7 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
           />
         </Field>
         <Field label="Bill-to name" error={errors.bill_to_name?.message} required>
-          <TextField.Root {...register("bill_to_name")} placeholder="Full legal name or LLC" />
+          <TextField.Root {...register("bill_to_name")} placeholder="Full legal name or entity" />
         </Field>
         <Flex gap="3">
           <Field label="Attention" error={errors.bill_to_attention?.message}>
@@ -249,6 +282,26 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
             <TextField.Root {...register("bill_to_email")} />
           </Field>
         </Flex>
+        {buyerAddresses.length > 1 && (
+          <Field label="Use address">
+            <Select.Root
+              defaultValue={buyerAddresses[0].id}
+              onValueChange={(addrId) => {
+                const a = buyerAddresses.find((x) => x.id === addrId);
+                if (a) setValue("bill_to_address", formatAddress(a));
+              }}
+            >
+              <Select.Trigger />
+              <Select.Content>
+                {buyerAddresses.map((a) => (
+                  <Select.Item key={a.id} value={a.id}>
+                    {addressSummary(a)}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+          </Field>
+        )}
         <Field label="Address" error={errors.bill_to_address?.message}>
           <TextArea {...register("bill_to_address")} rows={2} />
         </Field>

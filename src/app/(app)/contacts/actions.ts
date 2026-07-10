@@ -6,16 +6,50 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 
 type Result<T> = { data: T } | { error: string };
 
-function partyColumns(data: ReturnType<typeof partySchema.parse>) {
+type ParsedParty = ReturnType<typeof partySchema.parse>;
+
+function partyColumns(data: ParsedParty) {
   return {
     kind: data.kind,
     display_name: data.display_name,
     legal_name: data.legal_name,
+    entity_type: data.entity_type ?? null,
     email: data.email,
     phone: data.phone,
-    address: data.address,
     notes: data.notes,
   };
+}
+
+// Replace the full address set for a party (delete + reinsert). Positions
+// reflect array order; is_primary is normalized by partySchema's transform.
+async function replaceAddresses(
+  supabase: ReturnType<typeof getSupabaseServer>,
+  partyId: string,
+  addresses: ParsedParty["addresses"],
+): Promise<{ error: string } | null> {
+  const { error: delErr } = await supabase
+    .from("party_addresses")
+    .delete()
+    .eq("party_id", partyId);
+  if (delErr) return { error: delErr.message };
+
+  if (!addresses.length) return null;
+
+  const { error } = await supabase.from("party_addresses").insert(
+    addresses.map((a, position) => ({
+      party_id: partyId,
+      label: a.label,
+      line1: a.line1,
+      line2: a.line2,
+      city: a.city,
+      region: a.region,
+      postal_code: a.postal_code,
+      country_code: a.country_code,
+      is_primary: a.is_primary,
+      position,
+    })),
+  );
+  return error ? { error: error.message } : null;
 }
 
 export async function createParty(input: unknown): Promise<Result<{ id: string }>> {
@@ -38,6 +72,9 @@ export async function createParty(input: unknown): Promise<Result<{ id: string }
       .insert(parsed.data.roles.map((role) => ({ party_id: data.id, role })));
     if (roleErr) return { error: roleErr.message };
   }
+
+  const addrErr = await replaceAddresses(supabase, data.id, parsed.data.addresses);
+  if (addrErr) return addrErr;
 
   revalidatePath("/contacts");
   return { data };
@@ -71,6 +108,9 @@ export async function updateParty(
       .insert(parsed.data.roles.map((role) => ({ party_id: id, role })));
     if (roleErr) return { error: roleErr.message };
   }
+
+  const addrErr = await replaceAddresses(supabase, id, parsed.data.addresses);
+  if (addrErr) return addrErr;
 
   revalidatePath("/contacts");
   revalidatePath(`/contacts/${id}`);
