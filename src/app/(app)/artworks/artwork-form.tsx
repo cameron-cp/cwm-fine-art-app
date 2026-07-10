@@ -56,6 +56,8 @@ type NewProps = SharedProps & {
   artwork?: never;
   initialValues?: never;
   artistIdOverride?: never;
+  // Preselect an artist when arriving from an artist page (?artist=<id>).
+  defaultArtistId?: string;
 };
 
 type Props = EditProps | ImportProps | NewProps;
@@ -83,6 +85,8 @@ export function ArtworkForm(props: Props) {
     "initialValues" in props ? props.initialValues : undefined;
   const artistIdOverride =
     "artistIdOverride" in props ? props.artistIdOverride : undefined;
+  const defaultArtistId =
+    "defaultArtistId" in props ? props.defaultArtistId : undefined;
 
   const router = useRouter();
   const supabase = useSupabase();
@@ -141,7 +145,7 @@ export function ArtworkForm(props: Props) {
         primary_image_path: initialValues.primary_image_path ?? null,
       }
     : {
-        artist_id: artists[0]?.id ?? "",
+        artist_id: defaultArtistId ?? artists[0]?.id ?? "",
         title: "",
         year: null,
         medium: null,
@@ -482,22 +486,21 @@ export function ArtworkForm(props: Props) {
           <TextArea {...register("notes")} rows={3} placeholder="Won't appear on tearsheet" />
         </Field>
 
-        <Field
-          label={hasPrimaryImage ? "Replace / add image" : "Image"}
-          error={undefined}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-            className="text-sm"
-          />
-          <Text size="1" color="gray">
-            {hasPrimaryImage
-              ? "Uploading another image adds it (first uploaded image is the tearsheet hero)."
-              : "First image becomes the tearsheet hero image."}
-          </Text>
-        </Field>
+        {/* On edit, the dedicated image manager on the artwork page handles
+            uploads/reorder/hero. Only new/import need an inline first upload. */}
+        {!artwork && (
+          <Field label="Image" error={undefined}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="text-sm"
+            />
+            <Text size="1" color="gray">
+              First image becomes the tearsheet hero. You can add more images after saving.
+            </Text>
+          </Field>
+        )}
 
         <Flex gap="3" mt="2" justify="between">
           <Flex gap="3">
