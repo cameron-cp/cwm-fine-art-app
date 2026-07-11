@@ -88,6 +88,12 @@ html, body {
   letter-spacing: 0.005em;
 }
 
+.ts-artist-byline {
+  font-size: 11pt;
+  color: #444;
+  margin-bottom: 0.06in;
+}
+
 .ts-title {
   font-size: 12pt;
   margin-bottom: 0.04in;

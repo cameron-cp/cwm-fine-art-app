@@ -1,39 +1,51 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Callout, Flex, Text, TextArea, TextField } from "@radix-ui/themes";
+import { Badge, Button, Callout, Flex, Select, Text, TextArea, TextField } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
+import { COUNTRY_OPTIONS, countryName, demonym } from "@/lib/countries";
 import {
   artistSchema,
+  deriveSortName,
   type Artist,
   type ArtistFormInput,
   type ArtistInput,
 } from "@/lib/schemas/artist";
-import { createArtist, deleteArtist, updateArtist } from "./actions";
+import { createArtist, deleteArtist, generateArtistBio, updateArtist } from "./actions";
 
 type Props = { artist?: Artist };
+
+const ADD_PLACEHOLDER = "__add__";
 
 export function ArtistForm({ artist }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [bioPending, startBio] = useTransition();
+  const [bioError, setBioError] = useState<string | null>(null);
 
   const {
+    control,
     register,
     handleSubmit,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<ArtistFormInput, unknown, ArtistInput>({
     resolver: zodResolver(artistSchema),
     defaultValues: {
       name: artist?.name ?? "",
+      sort_name: artist?.sort_name ?? "",
       birth_year: artist?.birth_year ?? null,
       death_year: artist?.death_year ?? null,
-      nationality: artist?.nationality ?? null,
+      nationalities: (artist?.nationalities ?? []) as ArtistFormInput["nationalities"],
       bio: artist?.bio ?? null,
     },
   });
+
+  const nameReg = register("name");
 
   function onSubmit(values: ArtistInput) {
     setError(null);
@@ -44,6 +56,34 @@ export function ArtistForm({ artist }: Props) {
         return;
       }
       router.push("/artists");
+    });
+  }
+
+  function onGenerateBio() {
+    setBioError(null);
+    const name = getValues("name")?.trim();
+    if (!name) {
+      setBioError("Enter the artist's name first.");
+      return;
+    }
+    const num = (v: unknown): number | null => {
+      if (v === "" || v === null || v === undefined) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    startBio(async () => {
+      const result = await generateArtistBio({
+        name,
+        birth_year: num(getValues("birth_year")),
+        death_year: num(getValues("death_year")),
+        nationalities: (getValues("nationalities") ?? []) as string[],
+        artistId: artist?.id ?? null,
+      });
+      if ("error" in result) {
+        setBioError(result.error);
+        return;
+      }
+      setValue("bio", result.data, { shouldDirty: true });
     });
   }
 
@@ -71,7 +111,27 @@ export function ArtistForm({ artist }: Props) {
         )}
 
         <Field label="Name" error={errors.name?.message} required>
-          <TextField.Root {...register("name")} placeholder="e.g. Agnes Martin" />
+          <TextField.Root
+            {...nameReg}
+            placeholder="e.g. Agnes Martin"
+            onBlur={(e) => {
+              nameReg.onBlur(e);
+              // Fill the filing name from the display name only if it's still blank,
+              // so a manual override is never clobbered.
+              const current = getValues("sort_name");
+              if (typeof current !== "string" || current.trim() === "") {
+                setValue("sort_name", deriveSortName(e.target.value), { shouldDirty: true });
+              }
+            }}
+          />
+        </Field>
+
+        <Field
+          label="Files as"
+          error={errors.sort_name?.message}
+          hint='How she alphabetizes. Auto-filled from the name ("Picasso, Pablo") — override for mononyms (KAWS) or collectives.'
+        >
+          <TextField.Root {...register("sort_name")} placeholder="Martin, Agnes" />
         </Field>
 
         <Flex gap="3">
@@ -83,13 +143,103 @@ export function ArtistForm({ artist }: Props) {
           </Field>
         </Flex>
 
-        <Field label="Nationality" error={errors.nationality?.message}>
-          <TextField.Root {...register("nationality")} placeholder="American" />
-        </Field>
+        <Controller
+          control={control}
+          name="nationalities"
+          render={({ field }) => {
+            const codes = (field.value ?? []) as string[];
+            const set = (next: string[]) => field.onChange(next);
+            const availableOptions = COUNTRY_OPTIONS.filter((o) => !codes.includes(o.code));
+            return (
+              <Field
+                label="Nationality"
+                hint={
+                  codes.length > 1
+                    ? `Shows as "${codes.map(demonym).join("-")}". First = primary.`
+                    : "Add one or more. Tap ★ to set the primary (shown first)."
+                }
+              >
+                <Flex direction="column" gap="2">
+                  {codes.length > 0 && (
+                    <Flex gap="2" wrap="wrap">
+                      {codes.map((code, i) => (
+                        <Badge key={code} size="2" variant="soft" color={i === 0 ? "iris" : "gray"}>
+                          {i !== 0 && (
+                            <button
+                              type="button"
+                              aria-label={`Make ${countryName(code)} primary`}
+                              onClick={() => set([code, ...codes.filter((c) => c !== code)])}
+                              className="cursor-pointer"
+                            >
+                              ★
+                            </button>
+                          )}
+                          {countryName(code)}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${countryName(code)}`}
+                            onClick={() => set(codes.filter((c) => c !== code))}
+                            className="cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </Badge>
+                      ))}
+                    </Flex>
+                  )}
+                  <Select.Root
+                    value={ADD_PLACEHOLDER}
+                    onValueChange={(v) => v !== ADD_PLACEHOLDER && !codes.includes(v) && set([...codes, v])}
+                  >
+                    <Select.Trigger placeholder="Add nationality…" />
+                    <Select.Content>
+                      <Select.Item value={ADD_PLACEHOLDER} disabled>
+                        Add nationality…
+                      </Select.Item>
+                      {availableOptions.map((o) => (
+                        <Select.Item key={o.code} value={o.code}>
+                          {o.name}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </Flex>
+              </Field>
+            );
+          }}
+        />
 
-        <Field label="Bio" error={errors.bio?.message}>
-          <TextArea {...register("bio")} rows={5} placeholder="Short biographical note" />
-        </Field>
+        <Flex direction="column" gap="1" flexGrow="1">
+          <Flex justify="between" align="center" gap="3">
+            <Text as="label" size="2" weight="medium">
+              Bio
+            </Text>
+            <Button
+              type="button"
+              size="1"
+              variant="soft"
+              loading={bioPending}
+              onClick={onGenerateBio}
+            >
+              ✨ Draft with AI
+            </Button>
+          </Flex>
+          <Text size="1" color="gray">
+            Drafts from the fields above and this artist&apos;s works. Always review before saving —
+            AI can be wrong about specifics.
+          </Text>
+          <TextArea {...register("bio")} rows={6} placeholder="Short biographical note" />
+          {bioError && (
+            <Text size="1" color="red">
+              {bioError}
+            </Text>
+          )}
+          {errors.bio?.message && (
+            <Text size="1" color="red">
+              {errors.bio.message}
+            </Text>
+          )}
+        </Flex>
 
         <Flex gap="3" mt="2" justify="between">
           <Flex gap="3">
@@ -114,11 +264,13 @@ export function ArtistForm({ artist }: Props) {
 function Field({
   label,
   error,
+  hint,
   required,
   children,
 }: {
   label: string;
   error?: string;
+  hint?: string;
   required?: boolean;
   children: React.ReactNode;
 }) {
@@ -128,6 +280,11 @@ function Field({
         {label}
         {required && <Text color="red"> *</Text>}
       </Text>
+      {hint && (
+        <Text size="1" color="gray">
+          {hint}
+        </Text>
+      )}
       {children}
       {error && (
         <Text size="1" color="red">

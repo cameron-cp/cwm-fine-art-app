@@ -55,9 +55,10 @@ export function ImportReview({ draft, artists: initialArtists }: Props) {
     startCreatingArtist(async () => {
       const result = await createArtist({
         name: draft.suggested_artist_name as string,
+        sort_name: null,
         birth_year: null,
         death_year: null,
-        nationality: null,
+        nationalities: [],
         bio: null,
       });
       if ("error" in result) {

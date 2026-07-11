@@ -1,19 +1,24 @@
 import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import Link from "next/link";
+import { formatNationalities } from "@/lib/countries";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import type { Artist } from "@/lib/schemas/artist";
+
+type ArtistRow = {
+  id: string;
+  name: string;
+  birth_year: number | null;
+  death_year: number | null;
+  artist_nationalities: { country_code: string; position: number }[];
+};
 
 export default async function ArtistsPage() {
   const supabase = getSupabaseServer();
   const { data, error } = await supabase
     .from("artists")
-    .select("id, name, birth_year, death_year, nationality")
-    .order("name");
+    .select("id, name, birth_year, death_year, artist_nationalities(country_code, position)")
+    .order("sort_name");
 
-  const artists = (data ?? []) as Pick<
-    Artist,
-    "id" | "name" | "birth_year" | "death_year" | "nationality"
-  >[];
+  const artists = (data ?? []) as ArtistRow[];
 
   return (
     <Container size="4" py="6">
@@ -62,7 +67,7 @@ export default async function ArtistsPage() {
                   </Link>
                 </Table.Cell>
                 <Table.Cell>{formatYears(a.birth_year, a.death_year)}</Table.Cell>
-                <Table.Cell>{a.nationality ?? "—"}</Table.Cell>
+                <Table.Cell>{formatNationalities(orderedCodes(a.artist_nationalities)) || "—"}</Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
@@ -70,6 +75,11 @@ export default async function ArtistsPage() {
       )}
     </Container>
   );
+}
+
+// Sort embedded nationality rows by position and return bare codes, primary first.
+function orderedCodes(rows: { country_code: string; position: number }[]): string[] {
+  return [...rows].sort((a, b) => a.position - b.position).map((r) => r.country_code);
 }
 
 function formatYears(birth: number | null, death: number | null): string {

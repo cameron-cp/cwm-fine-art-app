@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtistForm } from "../artist-form";
 import { ArtworkCard, type ArtworkCardData } from "../../artworks/artwork-card";
+import { formatNationalities } from "@/lib/countries";
 import type { Artist } from "@/lib/schemas/artist";
 import type { ArtworkStatus } from "@/lib/schemas/artwork";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -24,7 +25,11 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
   const supabase = getSupabaseServer();
 
   const [{ data, error }, { data: worksData }] = await Promise.all([
-    supabase.from("artists").select("*").eq("id", id).maybeSingle(),
+    supabase
+      .from("artists")
+      .select("*, artist_nationalities(country_code, position)")
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("artworks")
       .select("id, title, year, medium, status, price_cents, currency, primary_image_path")
@@ -33,7 +38,10 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
   ]);
 
   if (error || !data) notFound();
-  const artist = data as Artist;
+  const natRows = ((data.artist_nationalities ?? []) as { country_code: string; position: number }[])
+    .sort((a, b) => a.position - b.position);
+  const nationalities = natRows.map((r) => r.country_code);
+  const artist = { ...data, nationalities } as Artist;
   const works = (worksData ?? []) as WorkRow[];
 
   const paths = works.map((w) => w.primary_image_path).filter((p): p is string => !!p);
@@ -62,7 +70,7 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
           {artist.name}
         </Heading>
         <Text size="2" color="gray">
-          {formatByline(artist.nationality, artist.birth_year, artist.death_year)}
+          {formatByline(formatNationalities(nationalities), artist.birth_year, artist.death_year)}
         </Text>
       </Box>
 
@@ -108,11 +116,7 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
 }
 
 // "American, 1913–1980" — the standard art-world byline.
-function formatByline(
-  nationality: string | null,
-  birth: number | null,
-  death: number | null,
-): string {
+function formatByline(nationality: string, birth: number | null, death: number | null): string {
   const years =
     birth && death ? `${birth}–${death}` : birth ? `b. ${birth}` : death ? `d. ${death}` : "";
   return [nationality, years].filter(Boolean).join(", ");
