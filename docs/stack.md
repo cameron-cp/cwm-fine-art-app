@@ -10,6 +10,7 @@ as of 2026-07-11. Update this when a dependency or provider changes.
 | --- | --- | --- |
 | App hosting / deploy | **Netlify** | `netlify.toml`; build `npm run build`, publish `.next`. Secrets scanner omits `NEXT_PUBLIC_*` keys by design. |
 | Database + Storage + Auth-adjacent RLS | **Supabase** | Postgres, Storage bucket `artworks`, RLS keyed to the single Clerk user. `@supabase/supabase-js`, `@supabase/ssr`. |
+| DNS & domain registrar | **Cloudflare** | DNS for `chloewaddington.com` (incl. SPF/DKIM/DMARC for the Resend sending domain) + domain registrar. Likely to take on more (proxy/CDN, email routing) over time. |
 | Secrets management | **Doppler** | Injects env vars across environments (owner-stated; not a repo file). |
 | Scheduled jobs / cron | **Netlify scheduled functions** | Gmail sync poll fallback (`/api/email/cron`), gated by `CRON_SECRET`. |
 
