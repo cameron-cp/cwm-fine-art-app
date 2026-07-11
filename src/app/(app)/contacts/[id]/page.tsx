@@ -1,4 +1,4 @@
-import { Card, Container, Flex, Heading, Text } from "@radix-ui/themes";
+import { Card, Container, Flex, Heading, Link, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { ContactForm } from "../contact-form";
 import {
@@ -54,15 +54,31 @@ export default async function ContactDetailPage({
   const roles = (roleRows ?? []).map((r) => r.role as PartyRole);
   const partyAddresses = (addressRows ?? []) as PartyAddressRow[];
   const relationships = (rels ?? []) as unknown as RelRow[];
+  const { website_url, linkedin_url } = party as Party;
 
   return (
     <Container size="3" py="6">
       <Heading size="7" mb="1">
         {(party as Party).display_name}
       </Heading>
-      <Text color="gray" size="2" mb="5" as="p">
+      <Text color="gray" size="2" mb={website_url || linkedin_url ? "2" : "5"} as="p">
         Edit the contact below. Relationships are shown read-only.
       </Text>
+
+      {(website_url || linkedin_url) && (
+        <Flex gap="4" mb="5" align="center">
+          {website_url && (
+            <Link href={website_url} target="_blank" rel="noreferrer" size="2">
+              Website ↗
+            </Link>
+          )}
+          {linkedin_url && (
+            <Link href={linkedin_url} target="_blank" rel="noreferrer" size="2">
+              LinkedIn ↗
+            </Link>
+          )}
+        </Flex>
+      )}
 
       <ContactForm party={party as Party} roles={roles} addresses={partyAddresses} />
 

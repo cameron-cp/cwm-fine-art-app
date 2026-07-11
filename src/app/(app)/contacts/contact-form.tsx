@@ -97,6 +97,8 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
       entity_type: party?.entity_type ?? null,
       email: party?.email ?? null,
       phone: party?.phone ?? null,
+      website_url: party?.website_url ?? null,
+      linkedin_url: party?.linkedin_url ?? null,
       notes: party?.notes ?? null,
       roles,
       addresses: addresses.length
@@ -235,6 +237,21 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
                   placeholder="Enter phone number"
                 />
               )}
+            />
+          </Field>
+        </Flex>
+
+        <Flex gap="3">
+          <Field label="Website" error={errors.website_url?.message}>
+            <TextField.Root
+              {...register("website_url")}
+              placeholder="example.com or company site"
+            />
+          </Field>
+          <Field label="LinkedIn" error={errors.linkedin_url?.message}>
+            <TextField.Root
+              {...register("linkedin_url")}
+              placeholder="linkedin.com/in/… or /company/…"
             />
           </Field>
         </Flex>

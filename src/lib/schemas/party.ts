@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalText } from "./coercers";
+import { optionalText, optionalUrl } from "./coercers";
 
 // Party model (Silverston pattern). A single table for people/organizations/
 // households, with standing roles and typed relationships. Buyer/seller/on-behalf
@@ -36,6 +36,21 @@ export const partyRelationshipTypes = [
 ] as const;
 export const partyRelationshipType = z.enum(partyRelationshipTypes);
 export type PartyRelationshipType = (typeof partyRelationshipTypes)[number];
+
+// A LinkedIn URL — an individual profile (/in/…) or a company page (/company/…).
+// Restricted to linkedin.com so a mistaken paste (e.g. the plain website) is caught.
+function isLinkedInHost(url: string): boolean {
+  try {
+    const h = new URL(url).hostname.toLowerCase();
+    return h === "linkedin.com" || h.endsWith(".linkedin.com");
+  } catch {
+    return false;
+  }
+}
+export const linkedinUrl = optionalUrl.refine(
+  (u) => u === null || isLinkedInHost(u),
+  "Must be a linkedin.com URL",
+);
 
 // Legal structure — a party is not always an LLC. Individuals, trusts, estates,
 // and non-US corporate forms all buy and hold art.
@@ -96,6 +111,8 @@ export const partySchema = z
     entity_type: entityType.nullish(),
     email: optionalText,
     phone: optionalText,
+    website_url: optionalUrl,
+    linkedin_url: linkedinUrl,
     notes: optionalText,
     roles: z.array(partyRole).default([]),
     addresses: z.array(partyAddressSchema).default([]),
@@ -169,6 +186,8 @@ export type Party = {
   entity_type: EntityType | null;
   email: string | null;
   phone: string | null;
+  website_url: string | null;
+  linkedin_url: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
