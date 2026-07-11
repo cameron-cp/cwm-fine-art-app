@@ -15,6 +15,14 @@ const serverSchema = z.object({
   // ABA / account numbers, so a tearsheet-secret leak must not reach invoices.
   INVOICE_RENDER_SECRET: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
+  // Resend. Sending is guarded on RESEND_API_KEY being present, so the app
+  // runs fine without it (mirrors BROWSERLESS_API_KEY). EMAIL_FROM must be a
+  // Resend-verified sender; "Name <addr@domain>" or a bare address both work.
+  // EMAIL_REPLY_TO defaults replies to a real inbox (e.g. her Gmail) so a
+  // collector's reply lands where she reads mail, not on the sending domain.
+  RESEND_API_KEY: optionalSecret,
+  EMAIL_FROM: optionalSecret,
+  EMAIL_REPLY_TO: optionalSecret,
 });
 
 const publicSchema = z.object({
@@ -39,5 +47,8 @@ export function getServerEnv() {
     TEARSHEET_RENDER_SECRET: process.env.TEARSHEET_RENDER_SECRET,
     INVOICE_RENDER_SECRET: process.env.INVOICE_RENDER_SECRET,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO,
   });
 }
