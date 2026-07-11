@@ -13,6 +13,7 @@ import {
   type ArtistFormInput,
   type ArtistInput,
 } from "@/lib/schemas/artist";
+import type { BioResult, FactFinding } from "@/lib/artist/bio";
 import { createArtist, deleteArtist, generateArtistBio, updateArtist } from "./actions";
 
 type Props = { artist?: Artist };
@@ -25,6 +26,7 @@ export function ArtistForm({ artist }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [bioPending, startBio] = useTransition();
   const [bioError, setBioError] = useState<string | null>(null);
+  const [bioChecks, setBioChecks] = useState<BioResult | null>(null);
 
   const {
     control,
@@ -61,6 +63,7 @@ export function ArtistForm({ artist }: Props) {
 
   function onGenerateBio() {
     setBioError(null);
+    setBioChecks(null);
     const name = getValues("name")?.trim();
     if (!name) {
       setBioError("Enter the artist's name first.");
@@ -83,7 +86,8 @@ export function ArtistForm({ artist }: Props) {
         setBioError(result.error);
         return;
       }
-      setValue("bio", result.data, { shouldDirty: true });
+      setValue("bio", result.data.bio, { shouldDirty: true });
+      setBioChecks(result.data);
     });
   }
 
@@ -134,13 +138,16 @@ export function ArtistForm({ artist }: Props) {
           <TextField.Root {...register("sort_name")} placeholder="Martin, Agnes" />
         </Field>
 
-        <Flex gap="3">
-          <Field label="Birth year" error={errors.birth_year?.message}>
-            <TextField.Root type="number" {...register("birth_year")} placeholder="1912" />
-          </Field>
-          <Field label="Death year" error={errors.death_year?.message}>
-            <TextField.Root type="number" {...register("death_year")} placeholder="2004" />
-          </Field>
+        <Flex direction="column" gap="1">
+          <Flex gap="3">
+            <Field label="Birth year" error={errors.birth_year?.message}>
+              <TextField.Root type="number" {...register("birth_year")} placeholder="1912" />
+            </Field>
+            <Field label="Death year" error={errors.death_year?.message}>
+              <TextField.Root type="number" {...register("death_year")} placeholder="2004" />
+            </Field>
+          </Flex>
+          {bioChecks?.dates && <FactCheckNote label="Dates" finding={bioChecks.dates} />}
         </Flex>
 
         <Controller
@@ -203,6 +210,9 @@ export function ArtistForm({ artist }: Props) {
                       ))}
                     </Select.Content>
                   </Select.Root>
+                  {bioChecks?.nationality && (
+                    <FactCheckNote label="Nationality" finding={bioChecks.nationality} />
+                  )}
                 </Flex>
               </Field>
             );
@@ -258,6 +268,27 @@ export function ArtistForm({ artist }: Props) {
         </Flex>
       </Flex>
     </form>
+  );
+}
+
+// A verdict on one dealer-entered fact, shown inline beneath that field after an
+// AI draft. Guidance only — it never mutates the field; she reconciles by hand.
+const VERDICT_STYLE: Record<
+  FactFinding["verdict"],
+  { color: "green" | "amber" | "red"; icon: string; label: string }
+> = {
+  confirmed: { color: "green", icon: "✓", label: "AI: looks right" },
+  unverified: { color: "amber", icon: "?", label: "AI: couldn't verify" },
+  contradicted: { color: "red", icon: "⚠", label: "AI: may be wrong" },
+};
+
+function FactCheckNote({ label, finding }: { label: string; finding: FactFinding }) {
+  const style = VERDICT_STYLE[finding.verdict];
+  return (
+    <Text size="1" color={style.color} aria-label={`${label} fact-check`}>
+      {style.icon} {style.label}
+      {finding.note ? ` — ${finding.note}` : ""}
+    </Text>
   );
 }
 
