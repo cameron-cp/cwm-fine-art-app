@@ -14,6 +14,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { getSupabaseAdmin } from "../src/lib/supabase/admin";
 import { runSync } from "../src/lib/vault/sync";
+import { runSeedParties } from "../src/lib/vault/seedParties";
 import { getEntity, getNeighbors, search, health } from "../src/lib/vault/queries";
 
 const DEFAULT_VAULT = path.join(homedir(), "chloe-second-brain");
@@ -38,6 +39,24 @@ async function cmdSync(): Promise<void> {
     `synced ${result.entities_upserted} entities, ${result.edges_upserted} edges, ` +
     `${result.asymmetries_count} asymmetries, files_failed=${result.files_failed}, ` +
     `${(result.duration_ms / 1000).toFixed(1)}s`,
+  );
+}
+
+async function cmdSeedParties(args: string[]): Promise<void> {
+  const dryRun = args.includes("--dry-run");
+  const supabase = getSupabaseAdmin();
+  const result = await runSeedParties({
+    vaultPath: vaultPath(),
+    supabase,
+    dryRun,
+    log: (m) => console.error(`[seed] ${m}`),
+  });
+  console.log(
+    `${result.dry_run ? "[dry-run] " : ""}` +
+      `clients=${result.clients_seen} skipped=${result.skipped} ` +
+      `dup_names=${result.duplicate_names} already_present=${result.already_present} ` +
+      `inserted=${result.parties_inserted} roles=${result.roles_inserted} ` +
+      `with_email=${result.with_email}`,
   );
 }
 
@@ -141,7 +160,8 @@ async function cmdHealth(): Promise<void> {
 async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2);
   switch (cmd) {
-    case "sync":      return cmdSync();
+    case "sync":         return cmdSync();
+    case "seed-parties": return cmdSeedParties(rest);
     case "get":       return cmdGet(rest[0]);
     case "neighbors": return cmdNeighbors(rest);
     case "search":    return cmdSearch(rest);
@@ -152,6 +172,7 @@ async function main(): Promise<void> {
       console.log(`crm — vault index CLI
 
   npm run crm -- sync
+  npm run crm -- seed-parties [--dry-run]
   npm run crm -- get <entity_id>
   npm run crm -- neighbors <entity_id> [--rel TYPE]
   npm run crm -- search <query>
