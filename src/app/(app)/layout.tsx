@@ -1,5 +1,5 @@
 import { UserButton } from "@clerk/nextjs";
-import { Box, Container, Flex, Heading } from "@radix-ui/themes";
+import { Box, Container, Flex } from "@radix-ui/themes";
 import Link from "next/link";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -10,9 +10,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Container size="4" py="3">
             <Flex align="center" justify="between" gap="6">
               <Flex align="center" gap="6">
-                <Heading size="4" asChild>
-                  <Link href="/artists">Inventory</Link>
-                </Heading>
                 <Flex gap="4" asChild>
                   <nav>
                     <Link href="/artists" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
