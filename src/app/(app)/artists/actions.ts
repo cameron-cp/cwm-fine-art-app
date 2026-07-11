@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { generateArtistBio as runBioGeneration } from "@/lib/artist/bio";
+import { generateArtistBio as runBioGeneration, type BioResult } from "@/lib/artist/bio";
 import { formatNationalities } from "@/lib/countries";
 import { getServerEnv } from "@/lib/env";
 import { artistSchema, deriveSortName, type ArtistInput } from "@/lib/schemas/artist";
@@ -96,7 +96,7 @@ const bioRequestSchema = z.object({
 
 export type BioRequest = z.input<typeof bioRequestSchema>;
 
-export async function generateArtistBio(input: BioRequest): Promise<Result<string>> {
+export async function generateArtistBio(input: BioRequest): Promise<Result<BioResult>> {
   const parsed = bioRequestSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, birth_year, death_year, nationalities, artistId } = parsed.data;
@@ -118,7 +118,7 @@ export async function generateArtistBio(input: BioRequest): Promise<Result<strin
     works = data ?? [];
   }
 
-  const years =
+  const lifeLabel =
     birth_year && death_year
       ? `${birth_year}–${death_year}`
       : birth_year
@@ -126,11 +126,13 @@ export async function generateArtistBio(input: BioRequest): Promise<Result<strin
         : death_year
           ? `d. ${death_year}`
           : "";
-  const byline = [formatNationalities(nationalities), years].filter(Boolean).join(", ");
 
   try {
-    const bio = await runBioGeneration({ name, byline, works }, env.ANTHROPIC_API_KEY);
-    return { data: bio };
+    const result = await runBioGeneration(
+      { name, nationalityLabel: formatNationalities(nationalities), lifeLabel, works },
+      env.ANTHROPIC_API_KEY,
+    );
+    return { data: result };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Bio generation failed" };
   }
