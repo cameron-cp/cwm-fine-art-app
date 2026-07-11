@@ -16,6 +16,8 @@ function partyColumns(data: ParsedParty) {
     entity_type: data.entity_type ?? null,
     email: data.email,
     phone: data.phone,
+    website_url: data.website_url,
+    linkedin_url: data.linkedin_url,
     notes: data.notes,
   };
 }

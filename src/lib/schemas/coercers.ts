@@ -10,6 +10,21 @@ export const optionalText = z.preprocess(
   z.string().trim().min(1).nullable(),
 );
 
+// Bare domain / path → https:// URL; blank → null. Lets a user paste
+// "gagosian.com" or "linkedin.com/in/x" without the scheme and still get a valid URL.
+export function normalizeUrl(v: unknown): unknown {
+  if (typeof v !== "string") return v;
+  const t = v.trim();
+  if (t === "") return null;
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+}
+
+// "" → null; otherwise a valid (scheme-normalized) URL.
+export const optionalUrl = z.preprocess(
+  normalizeUrl,
+  z.string().url("Enter a valid URL").nullable(),
+);
+
 // "" | null | undefined → null; otherwise a UUID. For nullable FK selects (a Radix
 // Select resolves its "__none__" sentinel to null before this ever sees it).
 export const optionalUuid = z.preprocess(
