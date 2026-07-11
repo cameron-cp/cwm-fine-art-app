@@ -13,15 +13,16 @@ as of 2026-07-11. Update this when a dependency or provider changes.
 | Secrets management | **Doppler** | Injects env vars across environments (owner-stated; not a repo file). |
 | Scheduled jobs / cron | **Netlify scheduled functions** | Gmail sync poll fallback (`/api/email/cron`), gated by `CRON_SECRET`. |
 
-> ⚠️ **Stale references to Vercel.** CLAUDE.md ("Vercel (app)"), `README.md`
-> (create-next-app boilerplate), and the `CRON_SECRET` comment in `src/lib/env.ts`
-> still say Vercel. Actual deploy target is Netlify. Clean these up.
+> ⚠️ **Lingering Vercel references.** CLAUDE.md is corrected. Still stale:
+> `README.md` (create-next-app boilerplate) and the `CRON_SECRET` comment in
+> `src/lib/env.ts` / `.env.example` ("Vercel Cron"). The env-file comments ride
+> along with in-progress email work, so they're left for that branch to clean up.
 
 ## Framework & language
 
 | Piece | Version | Notes |
 | --- | --- | --- |
-| Next.js | **16.2.4** | App Router. ⚠️ CLAUDE.md still says "Next.js 15" — stale. |
+| Next.js | **16.2.4** | App Router. Latest stable is 16.2.10 (6 patches behind, same 16.2 line). |
 | React / React DOM | 19.2.4 | |
 | TypeScript | ^5 | |
 
