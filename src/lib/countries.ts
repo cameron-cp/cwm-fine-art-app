@@ -42,3 +42,50 @@ export function countryName(code: string | null | undefined): string {
 export const COUNTRY_OPTIONS: { code: CountryCode; name: string }[] = [...COUNTRY_CODES]
   .map((code) => ({ code, name: countryName(code) }))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+// Demonyms (the adjective form: "French", "American") for the nationality byline
+// on tearsheets and artist bylines. Intl.DisplayNames only resolves country NAMES,
+// not demonyms, so this is a hand-maintained lookup — a bounded reference table, not
+// a judgment call. Covers the nationalities a Western art dealer actually encounters;
+// anything not listed falls back to the country name via `demonym()`.
+const DEMONYMS: Partial<Record<CountryCode, string>> = {
+  AF: "Afghan", AL: "Albanian", DZ: "Algerian", AR: "Argentine", AM: "Armenian",
+  AU: "Australian", AT: "Austrian", AZ: "Azerbaijani", BD: "Bangladeshi", BE: "Belgian",
+  BO: "Bolivian", BA: "Bosnian", BR: "Brazilian", BG: "Bulgarian", KH: "Cambodian",
+  CM: "Cameroonian", CA: "Canadian", CL: "Chilean", CN: "Chinese", CO: "Colombian",
+  CR: "Costa Rican", HR: "Croatian", CU: "Cuban", CY: "Cypriot", CZ: "Czech",
+  DK: "Danish", DO: "Dominican", EC: "Ecuadorian", EG: "Egyptian", SV: "Salvadoran",
+  EE: "Estonian", ET: "Ethiopian", FI: "Finnish", FR: "French", GE: "Georgian",
+  DE: "German", GH: "Ghanaian", GR: "Greek", GT: "Guatemalan", HT: "Haitian",
+  HN: "Honduran", HK: "Hong Kong", HU: "Hungarian", IS: "Icelandic", IN: "Indian",
+  ID: "Indonesian", IR: "Iranian", IQ: "Iraqi", IE: "Irish", IL: "Israeli",
+  IT: "Italian", JM: "Jamaican", JP: "Japanese", JO: "Jordanian", KZ: "Kazakh",
+  KE: "Kenyan", KP: "North Korean", KR: "South Korean", KW: "Kuwaiti", LV: "Latvian",
+  LB: "Lebanese", LY: "Libyan", LT: "Lithuanian", LU: "Luxembourgish", MY: "Malaysian",
+  ML: "Malian", MT: "Maltese", MX: "Mexican", MD: "Moldovan", MC: "Monégasque",
+  MN: "Mongolian", ME: "Montenegrin", MA: "Moroccan", MM: "Burmese", NP: "Nepali",
+  NL: "Dutch", NZ: "New Zealand", NI: "Nicaraguan", NG: "Nigerian", MK: "Macedonian",
+  NO: "Norwegian", PK: "Pakistani", PS: "Palestinian", PA: "Panamanian", PY: "Paraguayan",
+  PE: "Peruvian", PH: "Filipino", PL: "Polish", PT: "Portuguese", PR: "Puerto Rican",
+  QA: "Qatari", RO: "Romanian", RU: "Russian", RW: "Rwandan", SA: "Saudi",
+  RS: "Serbian", SG: "Singaporean", SK: "Slovak", SI: "Slovenian", ZA: "South African",
+  ES: "Spanish", LK: "Sri Lankan", SD: "Sudanese", SE: "Swedish", CH: "Swiss",
+  SY: "Syrian", TW: "Taiwanese", TH: "Thai", TN: "Tunisian", TR: "Turkish",
+  UG: "Ugandan", UA: "Ukrainian", AE: "Emirati", GB: "British", US: "American",
+  UY: "Uruguayan", UZ: "Uzbek", VE: "Venezuelan", VN: "Vietnamese", ZW: "Zimbabwean",
+};
+
+// The adjective form for a country ("French"), falling back to the country name
+// ("Ivory Coast") when no demonym is on record.
+export function demonym(code: string | null | undefined): string {
+  if (!code) return "";
+  return DEMONYMS[code as CountryCode] ?? countryName(code);
+}
+
+// The art-world nationality byline for an ordered list of country codes.
+// Primary-first order is the caller's responsibility; joined with a hyphen:
+// ["CU","US"] → "Cuban-American".
+export function formatNationalities(codes: readonly string[] | null | undefined): string {
+  if (!codes || codes.length === 0) return "";
+  return codes.map(demonym).filter(Boolean).join("-");
+}

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { GALLERY_NAME } from "@/lib/brand";
+import { formatNationalities } from "@/lib/countries";
 import { formatDimensions } from "@/lib/dimensions";
 import { getServerEnv } from "@/lib/env";
 import { getRenderServiceClient } from "@/lib/supabase/render-client";
@@ -9,7 +10,14 @@ import "./tearsheet.css";
 export const dynamic = "force-dynamic";
 
 type ArtworkRow = Artwork & {
-  artists: { name: string } | null;
+  artists:
+    | {
+        name: string;
+        birth_year: number | null;
+        death_year: number | null;
+        artist_nationalities: { country_code: string; position: number }[];
+      }
+    | null;
 };
 
 export default async function TearsheetRenderPage({
@@ -35,7 +43,7 @@ export default async function TearsheetRenderPage({
 
   const { data, error } = await supabase
     .from("artworks")
-    .select("*, artists(name)")
+    .select("*, artists(name, birth_year, death_year, artist_nationalities(country_code, position))")
     .eq("id", id)
     .maybeSingle();
 
@@ -55,6 +63,23 @@ export default async function TearsheetRenderPage({
     artwork.width_in,
     artwork.depth_in,
   );
+
+  // "American, 1955" — nationality (demonyms, primary first) + life years.
+  const artist = artwork.artists;
+  const nationality = formatNationalities(
+    [...(artist?.artist_nationalities ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((n) => n.country_code),
+  );
+  const years =
+    artist?.birth_year && artist?.death_year
+      ? `${artist.birth_year}–${artist.death_year}`
+      : artist?.birth_year
+        ? `b. ${artist.birth_year}`
+        : artist?.death_year
+          ? `d. ${artist.death_year}`
+          : "";
+  const artistByline = [nationality, years].filter(Boolean).join(", ");
 
   const provenance = artwork.provenance_lines ?? [];
   const literatureParagraphs = (artwork.literature ?? "")
@@ -78,7 +103,8 @@ export default async function TearsheetRenderPage({
       )}
 
       <section className="ts-meta">
-        <div className="ts-artist">{artwork.artists?.name ?? "Unknown artist"}</div>
+        <div className="ts-artist">{artist?.name ?? "Unknown artist"}</div>
+        {artistByline && <div className="ts-artist-byline">{artistByline}</div>}
         <div className="ts-title">
           <em>{artwork.title}</em>
           {artwork.year ? <>, {artwork.year}</> : null}
