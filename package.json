@@ -25,6 +25,7 @@
     "react-dom": "19.2.4",
     "react-hook-form": "^7.75.0",
     "react-phone-number-input": "^3.4.17",
+    "resend": "^6.17.2",
     "yaml": "^2.8.4",
     "zod": "^4.4.3"
   },
