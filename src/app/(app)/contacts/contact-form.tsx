@@ -41,6 +41,32 @@ type Props = { party?: Party; roles?: PartyRole[]; addresses?: PartyAddressRow[]
 
 const NONE = "__none__";
 
+// Clean globe for the phone country selector's "International" state. Replaces
+// react-phone-number-input's default icon (a busy phone-over-globe composite that
+// reads as two overlapping icons). Rendered inside .PhoneInputCountryIcon (3:2 box);
+// preserveAspectRatio keeps the circle centered rather than stretched.
+function GlobeIcon({ title, className }: { title?: string; className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-hidden={title ? undefined : true}
+      style={{ color: "var(--gray-10)" }}
+    >
+      {title ? <title>{title}</title> : null}
+      <circle cx="12" cy="12" r="9" />
+      <ellipse cx="12" cy="12" rx="4" ry="9" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <path d="M4.8 8.25h14.4M4.8 15.75h14.4" />
+    </svg>
+  );
+}
+
 const emptyAddress = (): NonNullable<PartyFormInput["addresses"]>[number] => ({
   label: "Residence",
   line1: "",
@@ -203,6 +229,7 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
               render={({ field }) => (
                 <PhoneInput
                   international
+                  internationalIcon={GlobeIcon}
                   value={(field.value as string | null) ?? undefined}
                   onChange={(v) => field.onChange(v ?? null)}
                   placeholder="Enter phone number"
