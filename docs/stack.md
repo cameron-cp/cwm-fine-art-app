@@ -56,6 +56,23 @@ as of 2026-07-11. Update this when a dependency or provider changes.
   `TEARSHEET_RENDER_SECRET` and `INVOICE_RENDER_SECRET` (invoice route exposes
   wire/bank details, so its secret is kept distinct).
 
+## Payments
+
+- **Stripe** (`stripe` ^22) — invoice pay-by-card/ACH, card/bank on file, and
+  Stripe-native retainers (subscriptions the app mirrors). Server secrets only:
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Feature stays dark until the
+  secret key is set (mirrors Resend/Browserless).
+- **Zero PCI scope** — all card/bank entry happens on Stripe-hosted pages
+  (Checkout + Billing Portal). No `NEXT_PUBLIC_STRIPE_*` key, no Stripe.js/
+  Elements; flows are server-created redirect URLs.
+- Webhook at `/api/stripe/webhook` (public route, raw-body HMAC). Applies state
+  through the `service_role`-only `apply_stripe_event` RPC (migration 0013):
+  atomic dedup + write. The money decision is pure, unit-tested TypeScript
+  (`src/lib/stripe/reconcile.ts`), not plpgsql.
+- Two one-time Stripe **dashboard** prerequisites the code can't set: enable
+  `us_bank_account` + Financial Connections for ACH (USD-only), and create a
+  Customer Portal configuration for "Manage methods". See `.env.example`.
+
 ## Email — outbound (transactional)
 
 - **Resend** (`resend` ^6) — the send rail. Sending is skipped when
