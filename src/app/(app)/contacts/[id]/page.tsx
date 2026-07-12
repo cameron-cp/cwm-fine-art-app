@@ -1,26 +1,15 @@
-import { Card, Container, Flex, Heading, Link, Text } from "@radix-ui/themes";
+import { Container, Flex, Heading, Link, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { ContactForm } from "../contact-form";
+import { ContactRelationships } from "../contact-relationships";
 import { ContactPaymentMethods } from "@/components/contact-payment-methods";
 import {
-  PARTY_RELATIONSHIP_LABELS,
   type Party,
   type PartyAddressRow,
-  type PartyRelationshipType,
+  type PartyRelationshipWithParties,
   type PartyRole,
 } from "@/lib/schemas/party";
 import { getSupabaseServer } from "@/lib/supabase/server";
-
-type RelRow = {
-  id: string;
-  type: PartyRelationshipType;
-  from_party_id: string;
-  to_party_id: string;
-  valid_from: string | null;
-  valid_to: string | null;
-  from_party: { display_name: string } | null;
-  to_party: { display_name: string } | null;
-};
 
 export default async function ContactDetailPage({
   params,
@@ -37,24 +26,31 @@ export default async function ContactDetailPage({
     .maybeSingle();
   if (!party) notFound();
 
-  const [{ data: roleRows }, { data: addressRows }, { data: rels }] = await Promise.all([
-    supabase.from("party_roles").select("role").eq("party_id", id),
-    supabase
-      .from("party_addresses")
-      .select("*")
-      .eq("party_id", id)
-      .order("position"),
-    supabase
-      .from("party_relationships")
-      .select(
-        "id, type, from_party_id, to_party_id, valid_from, valid_to, from_party:parties!party_relationships_from_party_id_fkey(display_name), to_party:parties!party_relationships_to_party_id_fkey(display_name)",
-      )
-      .or(`from_party_id.eq.${id},to_party_id.eq.${id}`),
-  ]);
+  const [{ data: roleRows }, { data: addressRows }, { data: rels }, { data: partyRows }] =
+    await Promise.all([
+      supabase.from("party_roles").select("role").eq("party_id", id),
+      supabase
+        .from("party_addresses")
+        .select("*")
+        .eq("party_id", id)
+        .order("position"),
+      supabase
+        .from("party_relationships")
+        .select(
+          "id, type, from_party_id, to_party_id, valid_from, valid_to, notes, from_party:parties!party_relationships_from_party_id_fkey(display_name), to_party:parties!party_relationships_to_party_id_fkey(display_name)",
+        )
+        .or(`from_party_id.eq.${id},to_party_id.eq.${id}`),
+      supabase
+        .from("parties")
+        .select("id, display_name")
+        .neq("id", id)
+        .order("display_name"),
+    ]);
 
   const roles = (roleRows ?? []).map((r) => r.role as PartyRole);
   const partyAddresses = (addressRows ?? []) as PartyAddressRow[];
-  const relationships = (rels ?? []) as unknown as RelRow[];
+  const relationships = (rels ?? []) as unknown as PartyRelationshipWithParties[];
+  const parties = (partyRows ?? []) as { id: string; display_name: string }[];
   const { website_url, linkedin_url } = party as Party;
 
   return (
@@ -63,7 +59,7 @@ export default async function ContactDetailPage({
         {(party as Party).display_name}
       </Heading>
       <Text color="gray" size="2" mb={website_url || linkedin_url ? "2" : "5"} as="p">
-        Edit the contact below. Relationships are shown read-only.
+        Edit the contact below.
       </Text>
 
       {(website_url || linkedin_url) && (
@@ -88,39 +84,12 @@ export default async function ContactDetailPage({
         hasCustomer={Boolean((party as Party).stripe_customer_id)}
       />
 
-      <Heading size="4" mt="7" mb="2">
-        Relationships
-      </Heading>
-      {relationships.length === 0 ? (
-        <Text color="gray" size="2">
-          No relationships recorded yet. (Relationship management is a fast-follow;
-          the schema captures who works where, advises whom, or represents which
-          artist.)
-        </Text>
-      ) : (
-        <Flex direction="column" gap="2">
-          {relationships.map((rel) => {
-            const outbound = rel.from_party_id === id;
-            const other = outbound ? rel.to_party : rel.from_party;
-            const label = PARTY_RELATIONSHIP_LABELS[rel.type];
-            const phrase = outbound
-              ? `${label} ${other?.display_name ?? "—"}`
-              : `${other?.display_name ?? "—"} — ${label} this contact`;
-            const span =
-              rel.valid_from || rel.valid_to
-                ? ` (${rel.valid_from ?? "…"}–${rel.valid_to ?? "present"})`
-                : "";
-            return (
-              <Card key={rel.id}>
-                <Text size="2">
-                  {phrase}
-                  {span}
-                </Text>
-              </Card>
-            );
-          })}
-        </Flex>
-      )}
+      <ContactRelationships
+        contactId={id}
+        contactName={(party as Party).display_name}
+        relationships={relationships}
+        parties={parties}
+      />
     </Container>
   );
 }

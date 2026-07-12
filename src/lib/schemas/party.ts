@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalText, optionalUrl } from "./coercers";
+import { optionalDate, optionalText, optionalUrl } from "./coercers";
 
 // Party model (Silverston pattern). A single table for people/organizations/
 // households, with standing roles and typed relationships. Buyer/seller/on-behalf
@@ -227,3 +227,118 @@ export type PartyRelationshipRow = {
   notes: string | null;
   created_at: string;
 };
+
+// A relationship row joined to both endpoints' display names — what the contact
+// page fetches and the relationships editor renders. Lifted here (was a local
+// `RelRow` in contacts/[id]/page.tsx) so the page and the client component share
+// one type. The two nested objects can be null if an embedded join misses.
+export type PartyRelationshipWithParties = {
+  id: string;
+  type: PartyRelationshipType;
+  from_party_id: string;
+  to_party_id: string;
+  valid_from: string | null;
+  valid_to: string | null;
+  notes: string | null;
+  from_party: { display_name: string } | null;
+  to_party: { display_name: string } | null;
+};
+
+// Write schema for a single relationship. `id` present = editing an existing row.
+// Directional: from_party_id is the subject, to_party_id the object of `type`.
+export const partyRelationshipSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    from_party_id: z.string().uuid("Pick a contact"),
+    to_party_id: z.string().uuid("Pick a contact"),
+    type: partyRelationshipType,
+    valid_from: optionalDate,
+    valid_to: optionalDate,
+    notes: optionalText,
+  })
+  .refine((r) => r.from_party_id !== r.to_party_id, {
+    message: "A contact can't have a relationship to itself",
+    path: ["to_party_id"],
+  });
+
+export type PartyRelationshipFormInput = z.input<typeof partyRelationshipSchema>;
+export type PartyRelationshipInput = z.output<typeof partyRelationshipSchema>;
+
+// --- Directional phrasing + option mapping (single source of truth) ----------
+//
+// A relationship edge is directional (from → to), but the UI is always anchored on
+// the contact whose page you're viewing. `contactIsFrom` = the current contact fills
+// the `from` (subject) side. All four helpers below live here — not inline in the
+// client component — so the picker labels, the rendered rows, and the add/edit
+// mapping can never disagree about which direction an edge points, and so the mapping
+// is unit-testable against the real functions the component runs.
+
+// Render one directed edge as a short phrase anchored on the current contact.
+// Matches the wording the read-only contact page used before this feature:
+//   relationshipPhrase("advises", true,  "Bob", "Jane") → "Advises Bob"
+//   relationshipPhrase("advises", false, "Bob", "Jane") → "Bob — Advises Jane"
+// Used verbatim for picker option labels too (with otherName = "…"), so a label
+// can never point the arrow the opposite way from the row it produces.
+export function relationshipPhrase(
+  type: PartyRelationshipType,
+  contactIsFrom: boolean,
+  otherName: string,
+  contactName = "this contact",
+): string {
+  const label = PARTY_RELATIONSHIP_LABELS[type];
+  return contactIsFrom
+    ? `${label} ${otherName}`
+    : `${otherName} — ${label} ${contactName}`;
+}
+
+export type DirectedRelationshipOption = {
+  value: string; // `${type}:${"from"|"to"}` — encodes type AND direction
+  label: string;
+  type: PartyRelationshipType;
+  contactIsFrom: boolean;
+};
+
+// The 12 picker options (6 types × 2 directions), phrased with the current contact
+// as the anchor. Built from relationshipPhrase so labels and rows share wording.
+export function directedRelationshipOptions(
+  contactName: string,
+): DirectedRelationshipOption[] {
+  return partyRelationshipTypes.flatMap((type) =>
+    [true, false].map((contactIsFrom) => ({
+      value: `${type}:${contactIsFrom ? "from" : "to"}`,
+      label: relationshipPhrase(type, contactIsFrom, "…", contactName),
+      type,
+      contactIsFrom,
+    })),
+  );
+}
+
+// Add-path mapping: a chosen option value + the picked other party → a DB row's
+// directional ids + type. Inverse of prefillDirectedOptionKey.
+export function buildRelationshipInput(
+  contactId: string,
+  optionValue: string,
+  otherPartyId: string,
+): {
+  from_party_id: string;
+  to_party_id: string;
+  type: PartyRelationshipType;
+} {
+  const [type, direction] = optionValue.split(":");
+  const contactIsFrom = direction === "from";
+  return {
+    from_party_id: contactIsFrom ? contactId : otherPartyId,
+    to_party_id: contactIsFrom ? otherPartyId : contactId,
+    type: type as PartyRelationshipType,
+  };
+}
+
+// Edit-path mapping: an existing row (relative to the current contact) → the option
+// value to preselect. Inverse of buildRelationshipInput.
+export function prefillDirectedOptionKey(
+  row: Pick<PartyRelationshipRow, "from_party_id" | "to_party_id" | "type">,
+  contactId: string,
+): string {
+  const contactIsFrom = row.from_party_id === contactId;
+  return `${row.type}:${contactIsFrom ? "from" : "to"}`;
+}

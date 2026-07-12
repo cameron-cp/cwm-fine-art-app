@@ -32,6 +32,16 @@ export const optionalUuid = z.preprocess(
   z.string().uuid().nullable(),
 );
 
+// "" | null | undefined → null; otherwise a YYYY-MM-DD string (what <input type="date">
+// emits). Validates shape only — Postgres `date` rejects an invalid calendar date on write.
+export const optionalDate = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? null : v),
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
+    .nullable(),
+);
+
 // "" → null; otherwise an integer year.
 export const optionalYear = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
