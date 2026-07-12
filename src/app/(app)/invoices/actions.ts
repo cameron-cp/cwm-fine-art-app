@@ -3,7 +3,15 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { computeInvoiceTotals } from "@/lib/money";
-import { invoiceSchema, type InvoiceInput } from "@/lib/schemas/invoice";
+import { invoiceSchema, type Invoice, type InvoiceInput } from "@/lib/schemas/invoice";
+import { publicEnv } from "@/lib/env";
+import { getStripe } from "@/lib/stripe/client";
+import { createInvoiceCheckoutSession } from "@/lib/stripe/checkout";
+import {
+  buildInvoicePaymentPayload,
+  settlementFromSession,
+} from "@/lib/stripe/resolve";
+import { getServiceClient } from "@/lib/supabase/service";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -235,4 +243,125 @@ export async function deleteInvoice(id: string): Promise<Result<{ id: string }>>
   if (error) return { error: error.message };
   revalidatePath("/invoices");
   return { data: { id } };
+}
+
+// --- Stripe payment actions (migration 0013) -------------------------
+
+// Create a hosted Checkout session to pay this invoice by card/ACH and return
+// its URL. Guards against paying an already-paid/processing invoice, and
+// persists a `pending` invoice_payments stub (carrying the session id) BEFORE
+// returning — so reconcileInvoicePayment can recover even if the webhook never
+// fires (e.g. a rotated STRIPE_WEBHOOK_SECRET fails verification upstream).
+export async function createInvoiceCheckout(
+  id: string,
+): Promise<Result<{ url: string }>> {
+  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return { error: "NEXT_PUBLIC_APP_URL is not configured." };
+
+  const supabase = getSupabaseServer();
+  const { data: invoiceRow } = await supabase
+    .from("invoices")
+    .select(
+      "id, invoice_prefix, invoice_number, total_cents, currency, bill_to_email, updated_at, payment_status, buyer_party_id",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!invoiceRow) return { error: "Invoice not found." };
+  const invoice = invoiceRow as Pick<
+    Invoice,
+    | "id"
+    | "invoice_prefix"
+    | "invoice_number"
+    | "total_cents"
+    | "currency"
+    | "bill_to_email"
+    | "updated_at"
+    | "payment_status"
+    | "buyer_party_id"
+  >;
+
+  if (invoice.payment_status === "paid" || invoice.payment_status === "processing") {
+    return { error: `This invoice is already ${invoice.payment_status}.` };
+  }
+
+  let stripeCustomerId: string | null = null;
+  if (invoice.buyer_party_id) {
+    const { data: party } = await supabase
+      .from("parties")
+      .select("stripe_customer_id")
+      .eq("id", invoice.buyer_party_id)
+      .maybeSingle();
+    stripeCustomerId = (party?.stripe_customer_id as string | null) ?? null;
+  }
+
+  const session = await createInvoiceCheckoutSession({
+    invoice,
+    stripeCustomerId,
+    appUrl,
+  });
+  if ("error" in session) return { error: session.error };
+
+  // Exactly one current stub: supersede prior pending stubs (an edit-and-resend
+  // mints a fresh session), then insert the new one synchronously.
+  await supabase
+    .from("invoice_payments")
+    .update({ status: "superseded" })
+    .eq("invoice_id", id)
+    .eq("status", "pending");
+  await supabase.from("invoice_payments").insert({
+    invoice_id: id,
+    stripe_checkout_session_id: session.data.id,
+    status: "pending",
+  });
+
+  return { data: { url: session.data.url } };
+}
+
+// Manual recovery: re-fetch the current session from Stripe and re-apply state
+// through apply_stripe_event (atomic). The escape hatch for the one failure the
+// webhook can't self-heal — a signature failure (wrong/rotated secret, URL
+// drift) means no handler ever ran, so no retry lands.
+export async function reconcileInvoicePayment(
+  id: string,
+): Promise<Result<{ status: string }>> {
+  const stripe = getStripe();
+  if (!stripe) return { error: "Stripe is not configured." };
+
+  const supabase = getSupabaseServer();
+  const { data: stub } = await supabase
+    .from("invoice_payments")
+    .select("stripe_checkout_session_id")
+    .eq("invoice_id", id)
+    .neq("status", "superseded")
+    .not("stripe_checkout_session_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const sessionId = stub?.stripe_checkout_session_id as string | null | undefined;
+  if (!sessionId) return { error: "No payment session to reconcile yet." };
+
+  try {
+    const service = getServiceClient();
+    const facts = await settlementFromSession(stripe, sessionId);
+    if (!facts) return { error: "Could not read the payment session from Stripe." };
+    const payload = await buildInvoicePaymentPayload(service, facts);
+    if (!payload) return { error: "Invoice not found." };
+
+    // Unique synthetic event id so a manual reconcile always applies; the RPC's
+    // terminal-state guard makes repeated applies safe.
+    const { error } = await service.rpc("apply_stripe_event", {
+      p_event_id: `manual-reconcile-${sessionId}-${Date.now()}`,
+      p_type: "manual.reconcile",
+      p_payload: payload,
+    });
+    if (error) return { error: error.message };
+
+    revalidatePath(`/invoices/${id}`);
+    revalidatePath("/invoices");
+    return { data: { status: String(payload.target_invoice_status) } };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Reconcile failed.",
+    };
+  }
 }

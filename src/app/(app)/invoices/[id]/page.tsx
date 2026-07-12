@@ -2,6 +2,10 @@ import { Button, Card, Container, Flex, Heading, Separator, Table, Text } from "
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
+import {
+  InvoicePaymentActions,
+  InvoicePaymentBadge,
+} from "@/components/invoice-payment-actions";
 import { formatInvoiceMoney } from "@/lib/money";
 import type { Invoice, InvoiceLineItem } from "@/lib/schemas/invoice";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -36,7 +40,10 @@ export default async function InvoiceDetailPage({
     <Container size="4" py="6">
       <Flex justify="between" align="start" mb="4">
         <div>
-          <Heading size="7">Invoice {number}</Heading>
+          <Flex align="center" gap="3">
+            <Heading size="7">Invoice {number}</Heading>
+            <InvoicePaymentBadge status={invoice.payment_status} />
+          </Flex>
           <Text color="gray" size="2">
             {invoice.bill_to_name} · {invoice.date_issued} · {invoice.currency}
           </Text>
@@ -52,6 +59,10 @@ export default async function InvoiceDetailPage({
             size="2"
           />
         </Flex>
+      </Flex>
+
+      <Flex justify="end" mb="4">
+        <InvoicePaymentActions id={id} status={invoice.payment_status} />
       </Flex>
 
       <Card mb="4">

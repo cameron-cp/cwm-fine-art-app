@@ -1,6 +1,8 @@
 import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { formatInvoiceMoney } from "@/lib/money";
+import { InvoicePaymentBadge } from "@/components/invoice-payment-actions";
+import type { InvoicePaymentStatus } from "@/lib/stripe/reconcile";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 type Row = {
@@ -11,13 +13,14 @@ type Row = {
   date_issued: string;
   currency: string;
   total_cents: number;
+  payment_status: InvoicePaymentStatus;
 };
 
 export default async function InvoicesPage() {
   const supabase = getSupabaseServer();
   const { data } = await supabase
     .from("invoices")
-    .select("id, invoice_prefix, invoice_number, bill_to_name, date_issued, currency, total_cents")
+    .select("id, invoice_prefix, invoice_number, bill_to_name, date_issued, currency, total_cents, payment_status")
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as Row[];
 
@@ -51,6 +54,7 @@ export default async function InvoicesPage() {
               <Table.ColumnHeaderCell>Number</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Bill to</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Date</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell align="right">Total</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
@@ -64,6 +68,9 @@ export default async function InvoicesPage() {
                 </Table.Cell>
                 <Table.Cell>{r.bill_to_name}</Table.Cell>
                 <Table.Cell>{r.date_issued}</Table.Cell>
+                <Table.Cell>
+                  <InvoicePaymentBadge status={r.payment_status} />
+                </Table.Cell>
                 <Table.Cell align="right">{formatInvoiceMoney(r.total_cents, r.currency)}</Table.Cell>
               </Table.Row>
             ))}

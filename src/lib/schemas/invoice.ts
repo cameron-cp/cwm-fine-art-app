@@ -155,6 +155,10 @@ export type Invoice = {
   shipping_cents: number;
   total_cents: number;
   notes: string | null;
+  // Stripe payment state (migration 0013). payment_status defaults 'unpaid'.
+  payment_status: import("@/lib/stripe/reconcile").InvoicePaymentStatus;
+  amount_paid_cents: number;
+  paid_at: string | null;
   created_at: string;
   updated_at: string;
 };

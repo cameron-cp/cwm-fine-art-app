@@ -101,6 +101,25 @@ export default async function InvoiceRenderPage({
 
       {/* Invoice meta */}
       <h1 className="inv-doc-title">INVOICE</h1>
+      {/* Live PAID stamp — read from the invoice's live payment_status (NOT the
+          settings_snapshot). Only a fully-collected invoice shows it. */}
+      {invoice.payment_status === "paid" && (
+        <div
+          style={{
+            border: "2px solid #217a3b",
+            color: "#217a3b",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            padding: "2px 10px",
+            display: "inline-block",
+            transform: "rotate(-4deg)",
+            marginBottom: "8px",
+          }}
+        >
+          PAID
+          {invoice.paid_at ? ` · ${fmtDate(invoice.paid_at.slice(0, 10))}` : ""}
+        </div>
+      )}
       <table className="inv-meta">
         <tbody>
           <tr><td className="inv-k">Invoice No.</td><td>{number}</td></tr>

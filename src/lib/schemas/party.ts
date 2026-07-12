@@ -189,6 +189,9 @@ export type Party = {
   website_url: string | null;
   linkedin_url: string | null;
   notes: string | null;
+  // Stripe Customer id (migration 0013), created lazily. null until a payment
+  // method or checkout first needs a customer.
+  stripe_customer_id: string | null;
   created_at: string;
   updated_at: string;
 };
