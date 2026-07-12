@@ -53,7 +53,7 @@ vault→parties seed import (buyers are typed as invoiced and accumulate).
 ## Stack
 
 **Core**
-- Next.js 15 App Router, TypeScript
+- Next.js 16 App Router, TypeScript
 - Supabase (Postgres + Storage + RLS)
 - Clerk (auth — single user)
 - Radix Themes + Radix Colors + Radix Primitives
@@ -66,7 +66,7 @@ vault→parties seed import (buyers are typed as invoiced and accumulate).
 
 **PDF generation**
 - Browserless.io (hosted Puppeteer) renders an HTML/CSS template to PDF
-- Decision: pay ~$10/mo to skip Chromium-on-Vercel pain. Revisit only if volume justifies self-hosting.
+- Decision: pay ~$10/mo to skip Chromium-on-serverless pain. Revisit only if volume justifies self-hosting.
 - The template is a regular Next.js page route styled to match her Word layout exactly. Browserless hits that URL with auth and returns the PDF.
 
 **Storage**
@@ -74,7 +74,7 @@ vault→parties seed import (buyers are typed as invoiced and accumulate).
 - Supabase image transformer for UI thumbnails; PDF pulls full-res
 
 **Deploy**
-- Vercel (app) + Supabase (DB/Storage) + Browserless (PDF)
+- Netlify (app) + Supabase (DB/Storage) + Browserless (PDF)
 
 ## Data model (V1)
 
