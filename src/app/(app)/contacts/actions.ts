@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { partySchema, type Party } from "@/lib/schemas/party";
+import {
+  partyRelationshipSchema,
+  partySchema,
+  type Party,
+} from "@/lib/schemas/party";
 import { publicEnv } from "@/lib/env";
 import {
   createBillingPortalSession,
@@ -166,6 +170,118 @@ export async function deleteParty(id: string): Promise<Result<{ id: string }>> {
   const { error } = await supabase.from("parties").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/contacts");
+  return { data: { id } };
+}
+
+// --- Relationships (party_relationships, migration 0007) -------------------
+//
+// A directed edge from_party_id → to_party_id. Both parties' detail pages show
+// it (the read query .or()s on either side), so every write revalidates BOTH
+// endpoints. The table has no DB unique constraint or self-ref CHECK, so those
+// guards live here; a future bulk import must route through these actions too.
+
+// Reject an identical edge (same from/to/type). `excludeId` is set on update so a
+// row never collides with itself (which would block every dates/notes-only edit).
+async function relationshipExists(
+  supabase: ReturnType<typeof getSupabaseServer>,
+  edge: { from_party_id: string; to_party_id: string; type: string },
+  excludeId?: string,
+): Promise<{ exists: boolean } | { error: string }> {
+  let q = supabase
+    .from("party_relationships")
+    .select("id")
+    .eq("from_party_id", edge.from_party_id)
+    .eq("to_party_id", edge.to_party_id)
+    .eq("type", edge.type);
+  if (excludeId) q = q.neq("id", excludeId);
+  const { data, error } = await q.limit(1);
+  if (error) return { error: error.message };
+  return { exists: (data ?? []).length > 0 };
+}
+
+export async function createRelationship(
+  input: unknown,
+): Promise<Result<{ id: string }>> {
+  const parsed = partyRelationshipSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid relationship" };
+  }
+  const { from_party_id, to_party_id, type, valid_from, valid_to, notes } =
+    parsed.data;
+  const supabase = getSupabaseServer();
+
+  const dup = await relationshipExists(supabase, {
+    from_party_id,
+    to_party_id,
+    type,
+  });
+  if ("error" in dup) return { error: dup.error };
+  if (dup.exists) return { error: "That relationship already exists." };
+
+  const { data, error } = await supabase
+    .from("party_relationships")
+    .insert({ from_party_id, to_party_id, type, valid_from, valid_to, notes })
+    .select("id")
+    .single();
+  if (error) return { error: error.message };
+
+  revalidatePath("/contacts");
+  revalidatePath(`/contacts/${from_party_id}`);
+  revalidatePath(`/contacts/${to_party_id}`);
+  return { data };
+}
+
+export async function updateRelationship(
+  id: string,
+  input: unknown,
+): Promise<Result<{ id: string }>> {
+  const parsed = partyRelationshipSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid relationship" };
+  }
+  const { from_party_id, to_party_id, type, valid_from, valid_to, notes } =
+    parsed.data;
+  const supabase = getSupabaseServer();
+
+  const dup = await relationshipExists(
+    supabase,
+    { from_party_id, to_party_id, type },
+    id, // exclude self so a dates/notes-only edit isn't rejected by its own row
+  );
+  if ("error" in dup) return { error: dup.error };
+  if (dup.exists) return { error: "That relationship already exists." };
+
+  const { error } = await supabase
+    .from("party_relationships")
+    .update({ from_party_id, to_party_id, type, valid_from, valid_to, notes })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  // The edit form fixes the counterparty, so from/to are the same two parties
+  // (possibly swapped) — revalidating both submitted ids covers both pages.
+  revalidatePath("/contacts");
+  revalidatePath(`/contacts/${from_party_id}`);
+  revalidatePath(`/contacts/${to_party_id}`);
+  return { data: { id } };
+}
+
+export async function deleteRelationship(
+  id: string,
+): Promise<Result<{ id: string }>> {
+  const supabase = getSupabaseServer();
+  // DELETE ... RETURNING both parties so we can revalidate the counterpart's page
+  // (the action only receives the row id, not the endpoints).
+  const { data, error } = await supabase
+    .from("party_relationships")
+    .delete()
+    .eq("id", id)
+    .select("from_party_id, to_party_id")
+    .single();
+  if (error) return { error: error.message };
+
+  revalidatePath("/contacts");
+  revalidatePath(`/contacts/${data.from_party_id}`);
+  revalidatePath(`/contacts/${data.to_party_id}`);
   return { data: { id } };
 }
 
