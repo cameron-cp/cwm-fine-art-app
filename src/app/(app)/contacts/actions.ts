@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { partySchema } from "@/lib/schemas/party";
+import { partySchema, type Party } from "@/lib/schemas/party";
+import { publicEnv } from "@/lib/env";
+import {
+  createBillingPortalSession,
+  createSetupCheckoutSession,
+} from "@/lib/stripe/customers";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 type Result<T> = { data: T } | { error: string };
@@ -162,4 +167,67 @@ export async function deleteParty(id: string): Promise<Result<{ id: string }>> {
   if (error) return { error: error.message };
   revalidatePath("/contacts");
   return { data: { id } };
+}
+
+// --- Stripe card/bank on file (migration 0013) -----------------------
+
+async function loadPaymentParty(
+  id: string,
+): Promise<
+  | { data: Pick<Party, "id" | "display_name" | "email" | "stripe_customer_id"> }
+  | { error: string }
+> {
+  const supabase = getSupabaseServer();
+  const { data } = await supabase
+    .from("parties")
+    .select("id, display_name, email, stripe_customer_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return { error: "Contact not found." };
+  return {
+    data: data as Pick<
+      Party,
+      "id" | "display_name" | "email" | "stripe_customer_id"
+    >,
+  };
+}
+
+// Start a setup-mode Checkout to save a card/bank on file for this contact.
+export async function addPaymentMethod(
+  id: string,
+): Promise<Result<{ url: string }>> {
+  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return { error: "NEXT_PUBLIC_APP_URL is not configured." };
+
+  const party = await loadPaymentParty(id);
+  if ("error" in party) return { error: party.error };
+
+  const result = await createSetupCheckoutSession({
+    party: party.data,
+    appUrl,
+    returnPath: `/contacts/${id}`,
+  });
+  if ("error" in result) return { error: result.error };
+
+  revalidatePath(`/contacts/${id}`);
+  return { data: { url: result.data.url } };
+}
+
+// Open the Stripe Billing Portal to manage saved payment methods.
+export async function openBillingPortal(
+  id: string,
+): Promise<Result<{ url: string }>> {
+  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return { error: "NEXT_PUBLIC_APP_URL is not configured." };
+
+  const party = await loadPaymentParty(id);
+  if ("error" in party) return { error: party.error };
+
+  const result = await createBillingPortalSession({
+    party: party.data,
+    appUrl,
+    returnPath: `/contacts/${id}`,
+  });
+  if ("error" in result) return { error: result.error };
+  return { data: { url: result.data.url } };
 }

@@ -1,6 +1,7 @@
 import { Card, Container, Flex, Heading, Link, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { ContactForm } from "../contact-form";
+import { ContactPaymentMethods } from "@/components/contact-payment-methods";
 import {
   PARTY_RELATIONSHIP_LABELS,
   type Party,
@@ -81,6 +82,11 @@ export default async function ContactDetailPage({
       )}
 
       <ContactForm party={party as Party} roles={roles} addresses={partyAddresses} />
+
+      <ContactPaymentMethods
+        id={id}
+        hasCustomer={Boolean((party as Party).stripe_customer_id)}
+      />
 
       <Heading size="4" mt="7" mb="2">
         Relationships

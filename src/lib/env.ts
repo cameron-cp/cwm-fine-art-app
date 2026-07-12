@@ -23,6 +23,12 @@ const serverSchema = z.object({
   RESEND_API_KEY: optionalSecret,
   EMAIL_FROM: optionalSecret,
   EMAIL_REPLY_TO: optionalSecret,
+  // Stripe. Optional so the payments feature runs "dark" until configured
+  // (mirrors RESEND_API_KEY/BROWSERLESS_API_KEY). No NEXT_PUBLIC_STRIPE_* key:
+  // all card/bank entry is on Stripe-hosted pages, so only server secrets exist.
+  // STRIPE_WEBHOOK_SECRET verifies the raw-body HMAC on the webhook route.
+  STRIPE_SECRET_KEY: optionalSecret,
+  STRIPE_WEBHOOK_SECRET: optionalSecret,
 });
 
 const publicSchema = z.object({
@@ -50,5 +56,7 @@ export function getServerEnv() {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   });
 }

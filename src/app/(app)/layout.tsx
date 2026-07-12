@@ -24,6 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link href="/invoices" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
                       Invoices
                     </Link>
+                    <Link href="/retainers" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
+                      Retainers
+                    </Link>
                     <Link href="/settings" className="text-[var(--gray-11)] hover:text-[var(--gray-12)]">
                       Settings
                     </Link>

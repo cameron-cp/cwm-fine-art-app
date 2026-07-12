@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/tearsheet/render(.*)", // Browserless hits this with a shared-secret token
   "/invoice/render(.*)", // Browserless hits this with INVOICE_RENDER_SECRET
+  "/api/stripe/webhook(.*)", // Stripe webhook; gated by raw-body HMAC (STRIPE_WEBHOOK_SECRET)
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
