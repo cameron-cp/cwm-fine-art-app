@@ -10,4 +10,16 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  test: {
+    // env.ts parses public env at import time; unit tests that import app modules
+    // (e.g. the authority lib) need these present. Dummy values — the integration
+    // tests that talk to a real stack read their credentials from `supabase status`,
+    // not from these, so they are unaffected.
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-anon-key",
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "test-clerk-key",
+      CLERK_SECRET_KEY: "test-clerk-secret",
+    },
+  },
 });

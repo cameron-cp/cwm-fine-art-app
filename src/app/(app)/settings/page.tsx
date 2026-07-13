@@ -56,6 +56,17 @@ export default async function SettingsPage() {
           </Text>
         </Flex>
       </Card>
+
+      <Heading size="4" mt="7" mb="2">
+        Data sources
+      </Heading>
+      <Card>
+        <Text size="1" color="gray" as="p">
+          Artist lookup data: Getty ULAN (ODC-BY) and Wikidata (CC0). Used to
+          prefill artist details for review; every field remains editable before
+          saving.
+        </Text>
+      </Card>
     </Container>
   );
 }

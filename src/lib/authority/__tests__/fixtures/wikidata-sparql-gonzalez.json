@@ -1,0 +1,45 @@
+{
+  "head" : {
+    "vars" : [ "nameLabel", "birth", "death", "genderLabel", "ulan", "viaf", "image", "isoCodes", "occupations" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "nameLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Félix González-Torres"
+      },
+      "birth" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1957-11-26T00:00:00Z"
+      },
+      "death" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1996-01-09T00:00:00Z"
+      },
+      "genderLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "male"
+      },
+      "ulan" : {
+        "type" : "literal",
+        "value" : "500114715"
+      },
+      "viaf" : {
+        "type" : "literal",
+        "value" : "115314866"
+      },
+      "isoCodes" : {
+        "type" : "literal",
+        "value" : "CU|US"
+      },
+      "occupations" : {
+        "type" : "literal",
+        "value" : "photographer|painter|sculptor|printmaker|visual artist|installation artist|conceptual artist"
+      }
+    } ]
+  }
+}

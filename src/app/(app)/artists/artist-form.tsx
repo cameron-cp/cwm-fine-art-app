@@ -5,7 +5,7 @@ import { Badge, Button, Callout, Flex, Select, Text, TextArea, TextField } from 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { COUNTRY_OPTIONS, countryName, demonym } from "@/lib/countries";
+import { COUNTRY_CODES, COUNTRY_OPTIONS, countryName, demonym } from "@/lib/countries";
 import {
   artistSchema,
   deriveSortName,
@@ -14,7 +14,10 @@ import {
   type ArtistInput,
 } from "@/lib/schemas/artist";
 import type { BioResult, FactFinding } from "@/lib/artist/bio";
+import { ArtistAuthorityPicker, type ResolvedPayload } from "./artist-authority-picker";
 import { createArtist, deleteArtist, generateArtistBio, updateArtist } from "./actions";
+
+const COUNTRY_CODE_SET = new Set<string>(COUNTRY_CODES);
 
 type Props = { artist?: Artist };
 
@@ -44,8 +47,23 @@ export function ArtistForm({ artist }: Props) {
       death_year: artist?.death_year ?? null,
       nationalities: (artist?.nationalities ?? []) as ArtistFormInput["nationalities"],
       bio: artist?.bio ?? null,
+      canonical_artist_id: artist?.canonical_artist_id ?? null,
     },
   });
+
+  // Adopt a Wikidata/Getty lookup: prefill the editable fields + record the
+  // canonical link. Nothing is saved yet — she verifies, then submits.
+  function onAuthorityResolved(payload: ResolvedPayload) {
+    const f = payload.fields;
+    setValue("name", f.preferred_name, { shouldDirty: true });
+    setValue("sort_name", f.sort_name, { shouldDirty: true });
+    setValue("birth_year", f.birth_year, { shouldDirty: true });
+    setValue("death_year", f.death_year, { shouldDirty: true });
+    const codes = f.nationality_codes.filter((c) => COUNTRY_CODE_SET.has(c));
+    setValue("nationalities", codes as ArtistFormInput["nationalities"], { shouldDirty: true });
+    if (f.bio) setValue("bio", f.bio, { shouldDirty: true });
+    setValue("canonical_artist_id", payload.canonicalArtistId, { shouldDirty: true });
+  }
 
   const nameReg = register("name");
 
@@ -113,6 +131,15 @@ export function ArtistForm({ artist }: Props) {
             <Callout.Text>{error}</Callout.Text>
           </Callout.Root>
         )}
+
+        <input type="hidden" {...register("canonical_artist_id")} />
+
+        <Field
+          label="Look up artist (Wikidata / Getty)"
+          hint="Search a public art authority to prefill verified details. Everything stays editable — check it before saving."
+        >
+          <ArtistAuthorityPicker onResolved={onAuthorityResolved} />
+        </Field>
 
         <Field label="Name" error={errors.name?.message} required>
           <TextField.Root

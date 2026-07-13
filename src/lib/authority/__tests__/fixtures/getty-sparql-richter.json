@@ -1,0 +1,22 @@
+{
+  "head" : {
+    "vars" : [ "prefLabel", "altLabels", "bio" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "prefLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Richter, Gerhard"
+      },
+      "altLabels" : {
+        "type" : "literal",
+        "value" : "Gerhard Richter||Rihitā, Geruharuto||Lixite, Gehede"
+      },
+      "bio" : {
+        "type" : "literal",
+        "value" : "German painter, born 1932"
+      }
+    } ]
+  }
+}
