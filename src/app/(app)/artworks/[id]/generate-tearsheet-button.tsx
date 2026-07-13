@@ -7,7 +7,7 @@ type Props = {
   artworkId: string;
   title: string;
   size?: "1" | "2" | "3";
-  variant?: "solid" | "soft";
+  variant?: "solid" | "soft" | "outline";
 };
 
 export function GenerateTearsheetButton({

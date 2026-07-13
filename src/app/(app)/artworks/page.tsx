@@ -29,6 +29,10 @@ function locationLabel(row: Row): string {
   return party?.display_name ? `${party.display_name} — ${label}` : label;
 }
 
+// Column-header treatment: letterspaced uppercase micro-caps (design system).
+// Wrapped on a <span> so Tailwind wins over Radix's unlayered cell styles.
+const HEAD = "text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-3)]";
+
 export default async function ArtworksPage() {
   const supabase = getSupabaseServer();
   const { data, error } = await supabase
@@ -45,10 +49,12 @@ export default async function ArtworksPage() {
 
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="center" mb="5">
-        <Heading size="7">Artworks</Heading>
-        <Flex gap="2">
-          <Button asChild variant="soft">
+      <Flex justify="between" align="end" mb="6">
+        <Heading size="8" weight="medium">
+          Artworks
+        </Heading>
+        <Flex gap="3" align="center">
+          <Button asChild variant="ghost" color="gray">
             <Link href="/artworks/import">Import PDF</Link>
           </Button>
           <Button asChild>
@@ -70,65 +76,81 @@ export default async function ArtworksPage() {
           justify="center"
           gap="3"
           py="9"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
-          <Text color="gray">No artworks yet.</Text>
-          <Button asChild variant="soft">
+          <Text style={{ color: "var(--ink-3)" }}>No artworks yet.</Text>
+          <Button asChild variant="outline" color="gray">
             <Link href="/artworks/new">Add your first artwork</Link>
           </Button>
         </Flex>
       ) : (
-        <Table.Root variant="surface">
+        <Table.Root variant="ghost">
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Artist</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Year</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Location</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell align="right">Price</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Artist / Work</span>
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Year</span>
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Status</span>
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Location</span>
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell align="right">
+                <span className={HEAD}>Price</span>
+              </Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {artworks.map((a) => {
               const url = a.primary_image_path ? signed[a.primary_image_path] : null;
+              const loc = locationLabel(a);
               return (
-                <Table.Row key={a.id}>
+                <Table.Row key={a.id} align="center">
                   <Table.Cell>
                     {url ? (
                       <Image
                         src={url}
                         alt=""
-                        width={48}
-                        height={48}
-                        className="rounded-1 object-cover"
+                        width={44}
+                        height={44}
+                        className="h-11 w-11 border border-[var(--rule)] object-cover"
                         unoptimized
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-[var(--gray-a3)] rounded-1" />
+                      <div className="h-11 w-11 border border-[var(--rule)] bg-[var(--paper-3)]" />
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    <Link
-                      href={`/artworks/${a.id}`}
-                      className="text-[var(--accent-11)] hover:underline"
-                    >
-                      {a.title}
+                    {/* Wall label: artist in Garamond, italic title beneath. */}
+                    <Link href={`/artworks/${a.id}`} className="group block">
+                      <div className="font-serif text-[16px] font-semibold leading-tight text-[var(--ink)]">
+                        {a.artists?.name ?? "—"}
+                      </div>
+                      <div className="font-serif text-[14px] italic leading-snug text-[var(--ink-2)] group-hover:text-[var(--ink)] group-hover:underline">
+                        {a.title}
+                      </div>
                     </Link>
                   </Table.Cell>
-                  <Table.Cell>{a.artists?.name ?? "—"}</Table.Cell>
-                  <Table.Cell>{a.year ?? "—"}</Table.Cell>
+                  <Table.Cell>
+                    <span className="num text-[13px] text-[var(--ink-3)]">{a.year ?? "—"}</span>
+                  </Table.Cell>
                   <Table.Cell>
                     <StatusBadge status={a.status} />
                   </Table.Cell>
                   <Table.Cell>
-                    <Text size="2" color={locationLabel(a) === "—" ? "gray" : undefined}>
-                      {locationLabel(a)}
+                    <Text size="2" style={{ color: loc === "—" ? "var(--ink-3)" : "var(--ink-2)" }}>
+                      {loc}
                     </Text>
                   </Table.Cell>
                   <Table.Cell align="right">
-                    {formatPriceCents(a.price_cents, a.currency)}
+                    <span className="num text-[14px] text-[var(--ink)]">
+                      {formatPriceCents(a.price_cents, a.currency)}
+                    </span>
                   </Table.Cell>
                 </Table.Row>
               );
