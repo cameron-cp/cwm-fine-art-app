@@ -2,7 +2,9 @@ import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes"
 import Image from "next/image";
 import Link from "next/link";
 import { StatusBadge } from "./status-badge";
-import type { Artwork } from "@/lib/schemas/artwork";
+import { ClearFilters, FilterSelect, SearchInput } from "@/components/list-controls";
+import { firstParam, sanitizeSearch } from "@/lib/search";
+import { artworkStatus, type Artwork } from "@/lib/schemas/artwork";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { formatPriceCents, signedArtworkUrls } from "@/lib/supabase/storage";
 
@@ -15,6 +17,12 @@ type Row = Pick<
 > & {
   artists: { name: string } | null;
   current_party_address: AddressRef | AddressRef[] | null;
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  available: "Available",
+  on_hold: "On hold",
+  sold: "Sold",
 };
 
 // "Party — label" for the current location, or "—". Tolerates the untyped embed
@@ -33,15 +41,56 @@ function locationLabel(row: Row): string {
 // Wrapped on a <span> so Tailwind wins over Radix's unlayered cell styles.
 const HEAD = "text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-3)]";
 
-export default async function ArtworksPage() {
+export default async function ArtworksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; artist?: string }>;
+}) {
+  const sp = await searchParams;
+  const q = sanitizeSearch(sp.q);
+  const status = artworkStatus.safeParse(firstParam(sp.status)).success
+    ? firstParam(sp.status)
+    : "";
+  const artistId = firstParam(sp.artist);
+  const hasFilters = !!(sp.q?.trim() || status || artistId);
+
   const supabase = getSupabaseServer();
-  const { data, error } = await supabase
+
+  // Artist list for the filter select — also lets us resolve a search term
+  // against artist names (search matches title OR artist).
+  const { data: artistRows } = await supabase
+    .from("artists")
+    .select("id, name")
+    .order("sort_name");
+  const artistOptions = (artistRows ?? []).map((a) => ({
+    value: a.id as string,
+    label: a.name as string,
+  }));
+
+  let matchingArtistIds: string[] = [];
+  if (q) {
+    const needle = q.toLowerCase();
+    matchingArtistIds = (artistRows ?? [])
+      .filter((a) => (a.name as string).toLowerCase().includes(needle))
+      .map((a) => a.id as string);
+  }
+
+  let query = supabase
     .from("artworks")
     .select(
       "id, title, year, status, price_cents, currency, primary_image_path, artists(name), current_party_address:party_addresses!artworks_current_party_address_id_fkey(label, party:parties(display_name))",
     )
     .order("created_at", { ascending: false });
 
+  if (q) {
+    const parts = [`title.ilike.%${q}%`];
+    if (matchingArtistIds.length) parts.push(`artist_id.in.(${matchingArtistIds.join(",")})`);
+    query = query.or(parts.join(","));
+  }
+  if (status) query = query.eq("status", status);
+  if (artistId) query = query.eq("artist_id", artistId);
+
+  const { data, error } = await query;
   const artworks = (data ?? []) as unknown as Row[];
 
   const paths = artworks.map((a) => a.primary_image_path).filter((p): p is string => !!p);
@@ -49,7 +98,7 @@ export default async function ArtworksPage() {
 
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="end" mb="6">
+      <Flex justify="between" align="end" mb="5">
         <Heading size="8" weight="medium">
           Artworks
         </Heading>
@@ -63,6 +112,26 @@ export default async function ArtworksPage() {
         </Flex>
       </Flex>
 
+      <Flex align="end" gap="4" mb="4" wrap="wrap">
+        <SearchInput placeholder="Search title or artist…" />
+        <FilterSelect
+          paramKey="status"
+          label="Status"
+          allLabel="All statuses"
+          options={artworkStatus.options.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
+        />
+        <FilterSelect
+          paramKey="artist"
+          label="Artist"
+          allLabel="All artists"
+          options={artistOptions}
+        />
+        {hasFilters && <ClearFilters href="/artworks" />}
+        <Text size="1" className="self-end num text-[var(--ink-3)]" ml="auto">
+          {artworks.length} {artworks.length === 1 ? "work" : "works"}
+        </Text>
+      </Flex>
+
       {error && (
         <Text color="red" size="2">
           {error.message}
@@ -70,19 +139,7 @@ export default async function ArtworksPage() {
       )}
 
       {artworks.length === 0 ? (
-        <Flex
-          direction="column"
-          align="center"
-          justify="center"
-          gap="3"
-          py="9"
-          className="border border-[var(--rule)]"
-        >
-          <Text style={{ color: "var(--ink-3)" }}>No artworks yet.</Text>
-          <Button asChild variant="outline" color="gray">
-            <Link href="/artworks/new">Add your first artwork</Link>
-          </Button>
-        </Flex>
+        <EmptyState filtered={hasFilters} />
       ) : (
         <Table.Root variant="ghost">
           <Table.Header>
@@ -159,5 +216,34 @@ export default async function ArtworksPage() {
         </Table.Root>
       )}
     </Container>
+  );
+}
+
+function EmptyState({ filtered }: { filtered: boolean }) {
+  return (
+    <Flex
+      direction="column"
+      align="center"
+      justify="center"
+      gap="3"
+      py="9"
+      className="border border-[var(--rule)]"
+    >
+      {filtered ? (
+        <>
+          <Text style={{ color: "var(--ink-3)" }}>No artworks match these filters.</Text>
+          <Button asChild variant="outline" color="gray">
+            <Link href="/artworks">Clear filters</Link>
+          </Button>
+        </>
+      ) : (
+        <>
+          <Text style={{ color: "var(--ink-3)" }}>No artworks yet.</Text>
+          <Button asChild variant="outline" color="gray">
+            <Link href="/artworks/new">Add your first artwork</Link>
+          </Button>
+        </>
+      )}
+    </Flex>
   );
 }

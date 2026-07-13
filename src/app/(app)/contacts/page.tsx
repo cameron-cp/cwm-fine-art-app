@@ -1,24 +1,66 @@
 import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { Th } from "@/components/ledger";
+import { ClearFilters, FilterSelect, SearchInput } from "@/components/list-controls";
+import { firstParam, sanitizeSearch } from "@/lib/search";
 import {
   PARTY_KIND_LABELS,
   PARTY_ROLE_LABELS,
+  partyKind,
+  partyKinds,
+  partyRole,
+  partyRoles,
   type Party,
   type PartyKind,
   type PartyRole,
 } from "@/lib/schemas/party";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
-export default async function ContactsPage() {
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; kind?: string; role?: string }>;
+}) {
+  const sp = await searchParams;
+  const q = sanitizeSearch(sp.q);
+  const kind = partyKind.safeParse(firstParam(sp.kind)).success ? firstParam(sp.kind) : "";
+  const role = partyRole.safeParse(firstParam(sp.role)).success ? firstParam(sp.role) : "";
+  const hasFilters = !!(sp.q?.trim() || kind || role);
+
   const supabase = getSupabaseServer();
-  const [{ data: parties }, { data: roleRows }] = await Promise.all([
-    supabase
-      .from("parties")
-      .select("id, kind, display_name, email")
-      .order("display_name"),
-    supabase.from("party_roles").select("party_id, role"),
-  ]);
+
+  // Role is a one-to-many join; resolve matching party ids first when filtering.
+  let roleIdFilter: string[] | null = null;
+  if (role) {
+    const { data: withRole } = await supabase
+      .from("party_roles")
+      .select("party_id")
+      .eq("role", role);
+    roleIdFilter = (withRole ?? []).map((r) => r.party_id as string);
+  }
+
+  let query = supabase
+    .from("parties")
+    .select("id, kind, display_name, email")
+    .order("display_name");
+
+  if (q) query = query.or(`display_name.ilike.%${q}%,email.ilike.%${q}%`);
+  if (kind) query = query.eq("kind", kind);
+  if (roleIdFilter)
+    query = query.in(
+      "id",
+      roleIdFilter.length ? roleIdFilter : ["00000000-0000-0000-0000-000000000000"],
+    );
+
+  const { data: parties } = await query;
+
+  const rows = (parties ?? []) as Pick<Party, "id" | "kind" | "display_name" | "email">[];
+
+  // Roles for the displayed parties only.
+  const partyIds = rows.map((p) => p.id);
+  const { data: roleRows } = partyIds.length
+    ? await supabase.from("party_roles").select("party_id, role").in("party_id", partyIds)
+    : { data: [] };
 
   const rolesByParty = new Map<string, PartyRole[]>();
   for (const r of (roleRows ?? []) as { party_id: string; role: PartyRole }[]) {
@@ -27,14 +69,9 @@ export default async function ContactsPage() {
     rolesByParty.set(r.party_id, list);
   }
 
-  const rows = (parties ?? []) as Pick<
-    Party,
-    "id" | "kind" | "display_name" | "email"
-  >[];
-
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="end" mb="6">
+      <Flex justify="between" align="end" mb="5">
         <Heading size="8" weight="medium">
           Contacts
         </Heading>
@@ -43,20 +80,28 @@ export default async function ContactsPage() {
         </Button>
       </Flex>
 
+      <Flex align="end" gap="4" mb="4" wrap="wrap">
+        <SearchInput placeholder="Search name or email…" />
+        <FilterSelect
+          paramKey="kind"
+          label="Type"
+          allLabel="All types"
+          options={partyKinds.map((k) => ({ value: k, label: PARTY_KIND_LABELS[k as PartyKind] }))}
+        />
+        <FilterSelect
+          paramKey="role"
+          label="Role"
+          allLabel="All roles"
+          options={partyRoles.map((r) => ({ value: r, label: PARTY_ROLE_LABELS[r as PartyRole] }))}
+        />
+        {hasFilters && <ClearFilters href="/contacts" />}
+        <Text size="1" className="self-end num text-[var(--ink-3)]" ml="auto">
+          {rows.length} {rows.length === 1 ? "contact" : "contacts"}
+        </Text>
+      </Flex>
+
       {rows.length === 0 ? (
-        <Flex
-          direction="column"
-          align="center"
-          justify="center"
-          gap="3"
-          py="9"
-          className="border border-[var(--rule)]"
-        >
-          <Text style={{ color: "var(--ink-3)" }}>No contacts yet.</Text>
-          <Button asChild variant="outline" color="gray">
-            <Link href="/contacts/new">Add your first contact</Link>
-          </Button>
-        </Flex>
+        <EmptyState filtered={hasFilters} />
       ) : (
         <Table.Root variant="ghost">
           <Table.Header>
@@ -85,12 +130,12 @@ export default async function ContactsPage() {
                 </Table.Cell>
                 <Table.Cell>
                   <Flex gap="2" wrap="wrap">
-                    {(rolesByParty.get(p.id) ?? []).map((role) => (
+                    {(rolesByParty.get(p.id) ?? []).map((r) => (
                       <span
-                        key={role}
+                        key={r}
                         className="border border-[var(--rule-2)] px-[7px] py-[2px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink-2)]"
                       >
-                        {PARTY_ROLE_LABELS[role]}
+                        {PARTY_ROLE_LABELS[r]}
                       </span>
                     ))}
                   </Flex>
@@ -104,5 +149,34 @@ export default async function ContactsPage() {
         </Table.Root>
       )}
     </Container>
+  );
+}
+
+function EmptyState({ filtered }: { filtered: boolean }) {
+  return (
+    <Flex
+      direction="column"
+      align="center"
+      justify="center"
+      gap="3"
+      py="9"
+      className="border border-[var(--rule)]"
+    >
+      {filtered ? (
+        <>
+          <Text style={{ color: "var(--ink-3)" }}>No contacts match these filters.</Text>
+          <Button asChild variant="outline" color="gray">
+            <Link href="/contacts">Clear filters</Link>
+          </Button>
+        </>
+      ) : (
+        <>
+          <Text style={{ color: "var(--ink-3)" }}>No contacts yet.</Text>
+          <Button asChild variant="outline" color="gray">
+            <Link href="/contacts/new">Add your first contact</Link>
+          </Button>
+        </>
+      )}
+    </Flex>
   );
 }
