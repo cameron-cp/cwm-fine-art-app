@@ -1,6 +1,8 @@
-import { Badge, Card, Container, Flex, Heading, Separator, Table, Text } from "@radix-ui/themes";
+import { Card, Container, Flex, Heading, Separator, Table, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
+import { Th } from "@/components/ledger";
 import { RetainerActions } from "@/components/retainer-actions";
+import { StatusTag, toneFromColor } from "@/components/status-tag";
 import { formatInvoiceMoney } from "@/lib/money";
 import type {
   Retainer,
@@ -54,8 +56,12 @@ export default async function RetainerDetailPage({
       <Flex justify="between" align="start" mb="4">
         <div>
           <Flex align="center" gap="3">
-            <Heading size="7">{retainer.party?.display_name ?? "Retainer"}</Heading>
-            <Badge color={STATUS_COLOR[retainer.status]}>{retainer.status}</Badge>
+            <Heading size="7" weight="medium">
+              {retainer.party?.display_name ?? "Retainer"}
+            </Heading>
+            <StatusTag tone={toneFromColor(STATUS_COLOR[retainer.status])}>
+              {retainer.status.replace(/_/g, " ")}
+            </StatusTag>
           </Flex>
           <Text color="gray" size="2">
             {retainer.description ?? "Retainer"}
@@ -95,22 +101,30 @@ export default async function RetainerDetailPage({
           No charges yet.
         </Text>
       ) : (
-        <Table.Root variant="surface">
+        <Table.Root variant="ghost">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell>Date</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell align="right">Amount</Table.ColumnHeaderCell>
+              <Th>Date</Th>
+              <Th>Status</Th>
+              <Th align="right">Amount</Th>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {payments.map((p) => (
-              <Table.Row key={p.id}>
+              <Table.Row key={p.id} align="center">
                 <Table.Cell>
-                  {p.paid_at ? p.paid_at.slice(0, 10) : p.created_at.slice(0, 10)}
+                  <span className="num text-[13px] text-[var(--ink-2)]">
+                    {p.paid_at ? p.paid_at.slice(0, 10) : p.created_at.slice(0, 10)}
+                  </span>
                 </Table.Cell>
-                <Table.Cell>{p.status ?? "—"}</Table.Cell>
-                <Table.Cell align="right">{money(p.amount_cents)}</Table.Cell>
+                <Table.Cell>
+                  <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--ink-3)]">
+                    {p.status ?? "—"}
+                  </span>
+                </Table.Cell>
+                <Table.Cell align="right">
+                  <span className="num text-[14px] text-[var(--ink)]">{money(p.amount_cents)}</span>
+                </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>

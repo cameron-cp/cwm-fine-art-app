@@ -1,5 +1,6 @@
-import { Badge, Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
+import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import Link from "next/link";
+import { Th } from "@/components/ledger";
 import {
   PARTY_KIND_LABELS,
   PARTY_ROLE_LABELS,
@@ -33,8 +34,10 @@ export default async function ContactsPage() {
 
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="center" mb="5">
-        <Heading size="7">Contacts</Heading>
+      <Flex justify="between" align="end" mb="6">
+        <Heading size="8" weight="medium">
+          Contacts
+        </Heading>
         <Button asChild>
           <Link href="/contacts/new">New contact</Link>
         </Button>
@@ -47,42 +50,54 @@ export default async function ContactsPage() {
           justify="center"
           gap="3"
           py="9"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
-          <Text color="gray">No contacts yet.</Text>
-          <Button asChild variant="soft">
+          <Text style={{ color: "var(--ink-3)" }}>No contacts yet.</Text>
+          <Button asChild variant="outline" color="gray">
             <Link href="/contacts/new">Add your first contact</Link>
           </Button>
         </Flex>
       ) : (
-        <Table.Root variant="surface">
+        <Table.Root variant="ghost">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Type</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Roles</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Email</Table.ColumnHeaderCell>
+              <Th>Name</Th>
+              <Th>Type</Th>
+              <Th>Roles</Th>
+              <Th>Email</Th>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {rows.map((p) => (
-              <Table.Row key={p.id}>
+              <Table.Row key={p.id} align="center">
                 <Table.Cell>
-                  <Link href={`/contacts/${p.id}`} className="text-[var(--accent-11)] hover:underline">
+                  <Link
+                    href={`/contacts/${p.id}`}
+                    className="font-serif text-[16px] text-[var(--ink)] hover:underline"
+                  >
                     {p.display_name}
                   </Link>
                 </Table.Cell>
-                <Table.Cell>{PARTY_KIND_LABELS[p.kind as PartyKind]}</Table.Cell>
                 <Table.Cell>
-                  <Flex gap="1" wrap="wrap">
+                  <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--ink-3)]">
+                    {PARTY_KIND_LABELS[p.kind as PartyKind]}
+                  </span>
+                </Table.Cell>
+                <Table.Cell>
+                  <Flex gap="2" wrap="wrap">
                     {(rolesByParty.get(p.id) ?? []).map((role) => (
-                      <Badge key={role} variant="soft">
+                      <span
+                        key={role}
+                        className="border border-[var(--rule-2)] px-[7px] py-[2px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink-2)]"
+                      >
                         {PARTY_ROLE_LABELS[role]}
-                      </Badge>
+                      </span>
                     ))}
                   </Flex>
                 </Table.Cell>
-                <Table.Cell>{p.email ?? "—"}</Table.Cell>
+                <Table.Cell>
+                  <span className="text-[13px] text-[var(--ink-2)]">{p.email ?? "—"}</span>
+                </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>

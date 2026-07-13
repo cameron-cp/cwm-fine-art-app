@@ -94,7 +94,7 @@ function ExpiredPanel() {
           minutes —{" "}
           <Link
             href="/artworks/import"
-            className="text-[var(--accent-11)] underline"
+            className="text-[var(--ink)] underline"
           >
             re-upload the PDF
           </Link>{" "}

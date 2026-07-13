@@ -120,13 +120,46 @@ UUIDs only. RLS on every table keyed to the single Clerk user id.
 Inherit from `~/.claude/CLAUDE.md`. Project-specific notes:
 
 - API responses: `{ data: T }` on success, `{ error: string }` on failure
-- Brand colors as CSS variables (her brand, not Compare Power's — TBD once we see her current sheet)
+- Brand colors as CSS variables — see the Design system section below (palette committed; her logo/wordmark TBD)
 - Primitives over native HTML
 - Zod on every API route
 - nuqs for any filter/search state in URLs
 
+## Design system — binding, applies to ALL UI
+
+**Every screen, component, and future feature follows [`docs/design/design-system.md`](docs/design/design-system.md).**
+This is not a suggestion or a v1-only style — it is the permanent visual contract for
+the product. Read that doc before building or changing any UI. The **`design-system`
+skill** (`.claude/skills/design-system/`) auto-triggers on UI work and carries the
+enforcement checklist — let it load; don't skip it. Do not reintroduce stock
+Radix defaults (indigo / mauve / soft radius / Noto Sans). If a new pattern isn't
+covered there, extend the doc rather than inventing an off-system look.
+
+Concept: **the interface as exhibition wall** — the UI recedes so the artwork is the only
+saturated thing on screen; type does the work; app and tearsheet share one voice.
+
+Non-negotiables (full detail + tokens in the doc):
+
+- **Color** — plaster ground `#F3F2EE`, warm ink `#1B1A17`, single accent **claret
+  `#7A2E2E`** used ONLY for the one primary action / active state per view (~1% of the
+  screen). Semantic status = sage/amber, never the accent. No indigo, no purple
+  gradients, no drop shadows. Both light + dark themes defined.
+- **Type** — **EB Garamond** for headings / artist names / titles (the bridge to the
+  tearsheet); **Hanken Grotesk** for UI + dense data (replaces Noto — never Inter/Space
+  Grotesk); **IBM Plex Mono** for prices / dimensions / dates / IDs (tabular figures).
+  Headings are ALWAYS serif; numbers are ALWAYS tabular mono.
+- **Primitives** — square corners (radius 0), hairline rules + whitespace (no shadows),
+  ghost/outline buttons with solid claret reserved for the single primary action, status
+  as a dot + uppercase word (never candy pills), letterspaced (`.14em`) uppercase labels.
+- **Signature** — the **museum wall label** (artist / *italic title* / letterspaced
+  medium · dims / mono price) rendered identically in list, detail, and tearsheet.
+- **Radix** — `accentColor="bronze"` + claret `--accent-9/10` override, `grayColor="sand"`,
+  `radius="none"`, heading-font override to the serif. Retune, don't rebuild.
+- **Motion** — one restrained page-load reveal per view; respect `prefers-reduced-motion`.
+  Extra motion reads as generic; don't scatter micro-animations.
+
 ## Open questions before coding
 
 - Need a sample of her current Word preview sheet (PDF or screenshot) to match layout 1:1
-- Her brand colors / fonts / logo file
+- Her logo / wordmark file (palette + fonts now committed in the Design system section)
 - Does she want the PDF to include her contact info as a footer, or is the logo enough?

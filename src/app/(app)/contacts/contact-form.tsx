@@ -14,6 +14,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
@@ -287,7 +288,7 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
             key={f.id}
             direction="column"
             gap="2"
-            className="border border-[var(--gray-a5)] rounded-3 p-3"
+            className="border border-[var(--rule)] p-3"
           >
             <Flex gap="3" align="end">
               <Field label="Label">
@@ -454,29 +455,3 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
   );
 }
 
-function Field({
-  label,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">
-        {label}
-        {required && <Text color="red"> *</Text>}
-      </Text>
-      {children}
-      {error && (
-        <Text size="1" color="red">
-          {error}
-        </Text>
-      )}
-    </Flex>
-  );
-}

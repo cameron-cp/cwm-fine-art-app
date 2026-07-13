@@ -1,11 +1,12 @@
 "use client";
 
-import { Badge, Button, Callout, Flex } from "@radix-ui/themes";
+import { Button, Callout, Flex } from "@radix-ui/themes";
 import { useState, useTransition } from "react";
 import {
   createInvoiceCheckout,
   reconcileInvoicePayment,
 } from "@/app/(app)/invoices/actions";
+import { StatusTag, toneFromColor } from "@/components/status-tag";
 import { INVOICE_PAYMENT_STATUS_META } from "@/lib/schemas/stripe";
 import type { InvoicePaymentStatus } from "@/lib/stripe/reconcile";
 
@@ -15,7 +16,7 @@ export function InvoicePaymentBadge({
   status: InvoicePaymentStatus;
 }) {
   const meta = INVOICE_PAYMENT_STATUS_META[status];
-  return <Badge color={meta.color}>{meta.label}</Badge>;
+  return <StatusTag tone={toneFromColor(meta.color)}>{meta.label}</StatusTag>;
 }
 
 // Payment controls on the invoice detail page. "Request payment" mints a hosted

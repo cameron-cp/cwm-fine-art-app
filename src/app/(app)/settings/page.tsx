@@ -1,4 +1,5 @@
-import { Badge, Card, Container, Flex, Heading, Text } from "@radix-ui/themes";
+import { Card, Container, Flex, Heading, Text } from "@radix-ui/themes";
+import { StatusTag } from "@/components/status-tag";
 import { SettingsForm } from "./settings-form";
 import { getServerEnv } from "@/lib/env";
 import type { InvoiceSettings } from "@/lib/schemas/invoice";
@@ -39,15 +40,15 @@ export default async function SettingsPage() {
         <Flex direction="column" gap="2">
           <Flex align="center" gap="2">
             <Text size="2">API key</Text>
-            <Badge color={stripeConfigured ? "green" : "gray"}>
+            <StatusTag tone={stripeConfigured ? "positive" : "muted"}>
               {stripeConfigured ? "Configured" : "Not configured"}
-            </Badge>
+            </StatusTag>
           </Flex>
           <Flex align="center" gap="2">
             <Text size="2">Webhook secret</Text>
-            <Badge color={webhookConfigured ? "green" : "gray"}>
+            <StatusTag tone={webhookConfigured ? "positive" : "muted"}>
               {webhookConfigured ? "Configured" : "Not configured"}
-            </Badge>
+            </StatusTag>
           </Flex>
           <Text size="1" color="gray">
             Keys are managed in Doppler. ACH and the Billing Portal each require a

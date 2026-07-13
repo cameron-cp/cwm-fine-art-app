@@ -11,6 +11,10 @@ type ArtistRow = {
   artist_nationalities: { country_code: string; position: number }[];
 };
 
+// Column-header treatment: letterspaced uppercase micro-caps (design system).
+// On a <span> so Tailwind wins over Radix's unlayered cell styles.
+const HEAD = "text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-3)]";
+
 export default async function ArtistsPage() {
   const supabase = getSupabaseServer();
   const { data, error } = await supabase
@@ -22,8 +26,10 @@ export default async function ArtistsPage() {
 
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="center" mb="5">
-        <Heading size="7">Artists</Heading>
+      <Flex justify="between" align="end" mb="6">
+        <Heading size="8" weight="medium">
+          Artists
+        </Heading>
         <Button asChild>
           <Link href="/artists/new">New artist</Link>
         </Button>
@@ -42,34 +48,58 @@ export default async function ArtistsPage() {
           justify="center"
           gap="3"
           py="9"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
-          <Text color="gray">No artists yet.</Text>
-          <Button asChild variant="soft">
+          <Text style={{ color: "var(--ink-3)" }}>No artists yet.</Text>
+          <Button asChild variant="outline" color="gray">
             <Link href="/artists/new">Add your first artist</Link>
           </Button>
         </Flex>
       ) : (
-        <Table.Root variant="surface">
+        <Table.Root variant="ghost">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Years</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Nationality</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Name</span>
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Years</span>
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>
+                <span className={HEAD}>Nationality</span>
+              </Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {artists.map((a) => (
-              <Table.Row key={a.id}>
-                <Table.Cell>
-                  <Link href={`/artists/${a.id}`} className="text-[var(--accent-11)] hover:underline">
-                    {a.name}
-                  </Link>
-                </Table.Cell>
-                <Table.Cell>{formatYears(a.birth_year, a.death_year)}</Table.Cell>
-                <Table.Cell>{formatNationalities(orderedCodes(a.artist_nationalities)) || "—"}</Table.Cell>
-              </Table.Row>
-            ))}
+            {artists.map((a) => {
+              const nationality = formatNationalities(orderedCodes(a.artist_nationalities));
+              return (
+                <Table.Row key={a.id} align="center">
+                  <Table.Cell>
+                    <Link
+                      href={`/artists/${a.id}`}
+                      className="font-serif text-[17px] font-semibold text-[var(--ink)] hover:underline"
+                    >
+                      {a.name}
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <span className="num text-[13px] text-[var(--ink-3)]">
+                      {formatYears(a.birth_year, a.death_year)}
+                    </span>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {nationality ? (
+                      <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--ink-3)]">
+                        {nationality}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--ink-3)]">—</span>
+                    )}
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
           </Table.Body>
         </Table.Root>
       )}

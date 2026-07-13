@@ -1,34 +1,92 @@
 @import "tailwindcss";
 
+/*
+  Design system — "the interface as exhibition wall".
+  Full spec + rationale: docs/design/design-system.md
+  Palette is rationed: plaster ground, warm ink, a single claret accent.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Plaster & ink — light (the gallery wall) */
+  --paper: #f3f2ee;
+  --paper-2: #eceae3;
+  --paper-3: #e4e1d8;
+  --ink: #1b1a17;
+  --ink-2: #45423b;
+  --ink-3: #6e6a60;
+  --rule: rgba(27, 26, 23, 0.14);
+  --rule-2: rgba(27, 26, 23, 0.3);
+
+  /* Claret — the one accent. Primary action / active state only. */
+  --claret: #7a2e2e;
+  --claret-hover: #6a2727;
+  --on-claret: #fbf7f2;
+
+  /* Semantic status (never the accent) */
+  --sage: #5c6b5a;
+  --amber: #8a6a2a;
+
+  /* Base bg/fg consumed by Tailwind + body */
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-noto-sans);
-  --font-mono: var(--font-noto-sans-mono);
+  --font-sans: var(--font-hanken);
+  --font-serif: var(--font-eb-garamond);
+  --font-mono: var(--font-plex-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Plaster & ink — dark (gallery at night / archival) */
+    --paper: #1a1815;
+    --paper-2: #221f1b;
+    --paper-3: #2a2621;
+    --ink: #ece9e1;
+    --ink-2: #bdb8ac;
+    --ink-3: #8a867b;
+    --rule: rgba(236, 233, 225, 0.15);
+    --rule-2: rgba(236, 233, 225, 0.32);
+
+    --claret: #b0574e;
+    --claret-hover: #c0655b;
+    --on-claret: #1a1815;
+
+    --sage: #93a38f;
+    --amber: #c7a15a;
   }
 }
 
-/* Override Radix Themes default font stack with Noto Sans. */
+/*
+  Radix Themes retune. accentColor="bronze" + grayColor="sand" + radius="none"
+  are set on <Theme> in layout.tsx; here we:
+    - point the three font tokens at our faces (headings go serif)
+    - override the solid accent steps so the primary action reads claret, not bronze
+*/
 .radix-themes {
-  --default-font-family: var(--font-noto-sans), "Helvetica Neue", Arial, sans-serif;
-  --code-font-family: var(--font-noto-sans-mono), "SF Mono", Menlo, monospace;
+  --default-font-family: var(--font-hanken), "Helvetica Neue", Arial, sans-serif;
+  --heading-font-family: var(--font-eb-garamond), Georgia, serif;
+  --code-font-family: var(--font-plex-mono), "SF Mono", Menlo, monospace;
+
+  /* Solid claret for <Button> (variant=solid) and other step-9/10 surfaces */
+  --accent-9: var(--claret);
+  --accent-10: var(--claret-hover);
+  --accent-contrast: var(--on-claret);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-noto-sans), "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-hanken), "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Prices, dimensions, dates, IDs — tabular catalogue voice. Add class="num". */
+.num {
+  font-family: var(--font-plex-mono), "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Blend react-phone-number-input with Radix Themes TextField. */

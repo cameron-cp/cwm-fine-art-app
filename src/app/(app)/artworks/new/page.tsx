@@ -32,7 +32,7 @@ export default async function NewArtworkPage({
         <Callout.Root>
           <Callout.Text>
             Add an{" "}
-            <Link href="/artists/new" className="text-[var(--accent-11)] underline">
+            <Link href="/artists/new" className="text-[var(--ink)] underline">
               artist
             </Link>{" "}
             first — every artwork belongs to one.

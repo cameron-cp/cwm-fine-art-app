@@ -11,6 +11,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
@@ -598,29 +599,3 @@ function groupAddressOptions(
   return Array.from(byParty, ([partyName, opts]) => ({ partyName, options: opts }));
 }
 
-function Field({
-  label,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">
-        {label}
-        {required && <Text color="red"> *</Text>}
-      </Text>
-      {children}
-      {error && (
-        <Text size="1" color="red">
-          {error}
-        </Text>
-      )}
-    </Flex>
-  );
-}
