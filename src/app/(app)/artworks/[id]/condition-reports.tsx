@@ -135,7 +135,7 @@ export function ConditionReports({ artworkId, reports }: Props) {
           align="center"
           justify="center"
           py="7"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
           <Text color="gray" size="2">
             No condition reports yet. Upload a PDF or image — it&apos;s attached and read for

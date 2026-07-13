@@ -76,10 +76,10 @@ export default function ImportArtworkPage() {
           const file = e.dataTransfer.files?.[0];
           if (file) handleFile(file);
         }}
-        className={`rounded-3 border-2 border-dashed px-6 py-12 transition-colors ${
+        className={`border-2 border-dashed px-6 py-12 transition-colors ${
           dragActive
-            ? "border-[var(--accent-9)] bg-[var(--accent-a3)]"
-            : "border-[var(--gray-a6)]"
+            ? "border-[var(--claret)] bg-[var(--paper-3)]"
+            : "border-[var(--rule-2)]"
         } ${pending ? "opacity-60" : ""}`}
       >
         <Flex direction="column" align="center" gap="4">

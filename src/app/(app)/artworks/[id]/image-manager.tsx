@@ -126,7 +126,7 @@ export function ImageManager({ artworkId, images, primaryPath }: Props) {
           align="center"
           justify="center"
           py="7"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
           <Text color="gray" size="2">
             No images yet. Add one — the first becomes the tearsheet hero.
@@ -142,7 +142,7 @@ export function ImageManager({ artworkId, images, primaryPath }: Props) {
                 gap="3"
                 align="center"
                 p="2"
-                className="border border-[var(--gray-a5)] rounded-3"
+                className="border border-[var(--rule)]"
               >
                 <Box style={{ flex: "0 0 96px" }}>
                   {img.url ? (
@@ -151,13 +151,13 @@ export function ImageManager({ artworkId, images, primaryPath }: Props) {
                       alt=""
                       width={96}
                       height={96}
-                      className="rounded-2 object-cover"
+                      className="border border-[var(--rule)] object-cover"
                       style={{ width: 96, height: 96 }}
                       unoptimized
                     />
                   ) : (
                     <Box
-                      className="rounded-2 bg-[var(--gray-a3)]"
+                      className="bg-[var(--paper-3)]"
                       style={{ width: 96, height: 96 }}
                     />
                   )}
