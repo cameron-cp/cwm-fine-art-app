@@ -139,6 +139,6 @@ html, body {
 
 .render-error {
   padding: 24px;
-  font-family: var(--font-noto-sans), Helvetica, Arial, sans-serif;
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
   color: #b00;
 }

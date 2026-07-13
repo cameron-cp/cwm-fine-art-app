@@ -4,24 +4,29 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Theme } from "@radix-ui/themes";
 import type { Metadata } from "next";
-import { EB_Garamond, Noto_Sans, Noto_Sans_Mono } from "next/font/google";
+import { EB_Garamond, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 
 import { Providers } from "./providers";
 
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
+// Design system (docs/design/design-system.md): three voices.
+// Hanken Grotesk — interface + dense data (the workhorse UI face).
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const notoSansMono = Noto_Sans_Mono({
-  variable: "--font-noto-sans-mono",
+// IBM Plex Mono — prices, dimensions, dates, IDs (tabular, catalogue-raisonné voice).
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
-// Loaded at root so the tearsheet route can reference --font-eb-garamond.
+// EB Garamond — headings, artist names, work titles. The bridge to the tearsheet:
+// loaded at root so the tearsheet/invoice render routes reference --font-eb-garamond too.
 const ebGaramond = EB_Garamond({
   variable: "--font-eb-garamond",
   subsets: ["latin"],
@@ -55,11 +60,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <ClerkProvider localization={clerkLocalization}>
       <html
         lang="en"
-        className={`${notoSans.variable} ${notoSansMono.variable} ${ebGaramond.variable} h-full antialiased`}
+        className={`${hankenGrotesk.variable} ${plexMono.variable} ${ebGaramond.variable} h-full antialiased`}
         suppressHydrationWarning
       >
         <body className="min-h-full flex flex-col">
-          <Theme accentColor="indigo" grayColor="mauve" radius="medium" scaling="100%">
+          {/* Design system: bronze base + claret --accent-9/10 override (globals.css),
+              warm sand gray, square corners. See docs/design/design-system.md. */}
+          <Theme accentColor="bronze" grayColor="sand" radius="none" scaling="100%">
             <Providers>{children}</Providers>
           </Theme>
         </body>
