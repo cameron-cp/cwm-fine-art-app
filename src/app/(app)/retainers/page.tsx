@@ -1,5 +1,7 @@
-import { Badge, Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
+import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes";
 import Link from "next/link";
+import { Th } from "@/components/ledger";
+import { StatusTag, toneFromColor } from "@/components/status-tag";
 import { formatInvoiceMoney } from "@/lib/money";
 import type { RetainerInterval, RetainerStatus } from "@/lib/schemas/stripe";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -39,8 +41,10 @@ export default async function RetainersPage() {
 
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="center" mb="5">
-        <Heading size="7">Retainers</Heading>
+      <Flex justify="between" align="end" mb="6">
+        <Heading size="8" weight="medium">
+          Retainers
+        </Heading>
         <Button asChild>
           <Link href="/retainers/new">New retainer</Link>
         </Button>
@@ -53,50 +57,58 @@ export default async function RetainersPage() {
           justify="center"
           gap="3"
           py="9"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
-          <Text color="gray">No retainers yet.</Text>
-          <Button asChild variant="soft">
+          <Text style={{ color: "var(--ink-3)" }}>No retainers yet.</Text>
+          <Button asChild variant="outline" color="gray">
             <Link href="/retainers/new">Start a retainer</Link>
           </Button>
         </Flex>
       ) : (
-        <Table.Root variant="surface">
+        <Table.Root variant="ghost">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell>Contact</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Cadence</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Next charge</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell align="right">Amount</Table.ColumnHeaderCell>
+              <Th>Contact</Th>
+              <Th>Description</Th>
+              <Th>Cadence</Th>
+              <Th>Status</Th>
+              <Th>Next charge</Th>
+              <Th align="right">Amount</Th>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {rows.map((r) => (
-              <Table.Row key={r.id}>
+              <Table.Row key={r.id} align="center">
                 <Table.Cell>
                   <Link
                     href={`/retainers/${r.id}`}
-                    className="text-[var(--accent-11)] hover:underline"
+                    className="font-serif text-[15px] text-[var(--ink)] hover:underline"
                   >
                     {r.party?.display_name ?? "—"}
                   </Link>
                 </Table.Cell>
-                <Table.Cell>{r.description ?? "—"}</Table.Cell>
                 <Table.Cell>
-                  {r.billing_interval ? INTERVAL_LABEL[r.billing_interval] : "—"}
+                  <span className="text-[var(--ink-2)]">{r.description ?? "—"}</span>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge color={STATUS_COLOR[r.status]}>{r.status}</Badge>
+                  <span className="text-[13px] uppercase tracking-[0.12em] text-[var(--ink-3)]">
+                    {r.billing_interval ? INTERVAL_LABEL[r.billing_interval] : "—"}
+                  </span>
                 </Table.Cell>
                 <Table.Cell>
-                  {r.current_period_end
-                    ? r.current_period_end.slice(0, 10)
-                    : "—"}
+                  <StatusTag tone={toneFromColor(STATUS_COLOR[r.status])}>
+                    {r.status.replace(/_/g, " ")}
+                  </StatusTag>
+                </Table.Cell>
+                <Table.Cell>
+                  <span className="num text-[13px] text-[var(--ink-3)]">
+                    {r.current_period_end ? r.current_period_end.slice(0, 10) : "—"}
+                  </span>
                 </Table.Cell>
                 <Table.Cell align="right">
-                  {formatInvoiceMoney(r.amount_cents, r.currency)}
+                  <span className="num text-[14px] text-[var(--ink)]">
+                    {formatInvoiceMoney(r.amount_cents, r.currency)}
+                  </span>
                 </Table.Cell>
               </Table.Row>
             ))}

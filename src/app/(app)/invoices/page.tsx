@@ -2,6 +2,7 @@ import { Button, Container, Flex, Heading, Table, Text } from "@radix-ui/themes"
 import Link from "next/link";
 import { formatInvoiceMoney } from "@/lib/money";
 import { InvoicePaymentBadge } from "@/components/invoice-payment-actions";
+import { Th } from "@/components/ledger";
 import type { InvoicePaymentStatus } from "@/lib/stripe/reconcile";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
@@ -26,8 +27,10 @@ export default async function InvoicesPage() {
 
   return (
     <Container size="4" py="6">
-      <Flex justify="between" align="center" mb="5">
-        <Heading size="7">Invoices</Heading>
+      <Flex justify="between" align="end" mb="6">
+        <Heading size="8" weight="medium">
+          Invoices
+        </Heading>
         <Button asChild>
           <Link href="/invoices/new">New invoice</Link>
         </Button>
@@ -40,38 +43,50 @@ export default async function InvoicesPage() {
           justify="center"
           gap="3"
           py="9"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
-          <Text color="gray">No invoices yet.</Text>
-          <Button asChild variant="soft">
+          <Text style={{ color: "var(--ink-3)" }}>No invoices yet.</Text>
+          <Button asChild variant="outline" color="gray">
             <Link href="/invoices/new">Create your first invoice</Link>
           </Button>
         </Flex>
       ) : (
-        <Table.Root variant="surface">
+        <Table.Root variant="ghost">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell>Number</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Bill to</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Date</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell align="right">Total</Table.ColumnHeaderCell>
+              <Th>Number</Th>
+              <Th>Bill to</Th>
+              <Th>Date</Th>
+              <Th>Status</Th>
+              <Th align="right">Total</Th>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {rows.map((r) => (
-              <Table.Row key={r.id}>
+              <Table.Row key={r.id} align="center">
                 <Table.Cell>
-                  <Link href={`/invoices/${r.id}`} className="text-[var(--accent-11)] hover:underline">
-                    {r.invoice_prefix}{r.invoice_number}
+                  <Link
+                    href={`/invoices/${r.id}`}
+                    className="num text-[13px] text-[var(--ink)] hover:underline"
+                  >
+                    {r.invoice_prefix}
+                    {r.invoice_number}
                   </Link>
                 </Table.Cell>
-                <Table.Cell>{r.bill_to_name}</Table.Cell>
-                <Table.Cell>{r.date_issued}</Table.Cell>
+                <Table.Cell>
+                  <span className="text-[var(--ink)]">{r.bill_to_name}</span>
+                </Table.Cell>
+                <Table.Cell>
+                  <span className="num text-[13px] text-[var(--ink-3)]">{r.date_issued}</span>
+                </Table.Cell>
                 <Table.Cell>
                   <InvoicePaymentBadge status={r.payment_status} />
                 </Table.Cell>
-                <Table.Cell align="right">{formatInvoiceMoney(r.total_cents, r.currency)}</Table.Cell>
+                <Table.Cell align="right">
+                  <span className="num text-[14px] text-[var(--ink)]">
+                    {formatInvoiceMoney(r.total_cents, r.currency)}
+                  </span>
+                </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
