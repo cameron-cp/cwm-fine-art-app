@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Card, Flex, Spinner, Text, TextField } from "@radix-ui/themes";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import type {
   AuthorityCandidate,
@@ -54,11 +54,14 @@ export function ArtistAuthorityPicker({ onResolved }: Props) {
 
   // Keyed on the DEBOUNCED string, so React Query dedupes per keystroke and a
   // slow earlier request can never overwrite the latest results (B4).
+  // keepPreviousData holds the last results on screen while the next query loads,
+  // so the panel never blanks between keystrokes (the "empty then it populates" bug).
   const search = useQuery({
     queryKey: ["artist-authority-search", debouncedQ],
     queryFn: () => fetchCandidates(debouncedQ),
     enabled: debouncedQ.length >= 2,
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 
   const resolve = useMutation({
@@ -87,6 +90,12 @@ export function ArtistAuthorityPicker({ onResolved }: Props) {
       <TextField.Root
         value={input}
         placeholder="Search Wikidata / Getty — e.g. Gerhard Richter"
+        // Suppress the browser's native autofill dropdown, which otherwise pops up
+        // (often empty) over our results panel.
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
         onChange={(e) => {
           setInput(e.target.value);
           setOpen(true);
@@ -116,6 +125,11 @@ export function ArtistAuthorityPicker({ onResolved }: Props) {
               {(search.error as Error).message}
             </Text>
           )}
+          {!search.isError && search.isFetching && candidates.length === 0 && (
+            <Text size="1" color="gray" as="p">
+              Searching…
+            </Text>
+          )}
           {!search.isError && !search.isFetching && candidates.length === 0 && (
             <Text size="1" color="gray" as="p">
               No matches.
@@ -134,7 +148,7 @@ export function ArtistAuthorityPicker({ onResolved }: Props) {
                   padding: "6px 8px",
                   background: "transparent",
                   border: "none",
-                  borderRadius: 6,
+                  borderRadius: 0,
                 }}
               >
                 <Text size="2" weight="medium" as="div">
