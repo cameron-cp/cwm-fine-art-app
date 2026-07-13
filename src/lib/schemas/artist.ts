@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { COUNTRY_CODES } from "@/lib/countries";
+import { optionalUuid } from "@/lib/schemas/coercers";
 
 const optionalText = z.preprocess(
   (v) => (typeof v === "string" && v.trim() === "" ? null : v),
@@ -37,6 +38,9 @@ export const artistSchema = z.object({
   // adjective byline ("Cuban-American") is rendered from this order.
   nationalities: z.array(z.enum(COUNTRY_CODES)).default([]),
   bio: optionalText,
+  // Link to the shared canonical_artists authority row, set when the dealer adopts
+  // a Wikidata/Getty lookup. Null when the artist was entered by hand.
+  canonical_artist_id: optionalUuid,
 });
 
 export type ArtistFormInput = z.input<typeof artistSchema>;

@@ -19,6 +19,7 @@ function artistRow(input: ArtistInput) {
     death_year: input.death_year,
     bio: input.bio,
     sort_name: input.sort_name?.trim() || deriveSortName(input.name),
+    canonical_artist_id: input.canonical_artist_id,
   };
 }
 

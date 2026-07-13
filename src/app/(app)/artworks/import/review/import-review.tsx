@@ -60,6 +60,9 @@ export function ImportReview({ draft, artists: initialArtists }: Props) {
         death_year: null,
         nationalities: [],
         bio: null,
+        // PDF-imported artists get no authority linkage in this PR (see the ADR's
+        // deferred list); the inline create flow is intentionally unchanged.
+        canonical_artist_id: null,
       });
       if ("error" in result) {
         setCreationError(result.error);

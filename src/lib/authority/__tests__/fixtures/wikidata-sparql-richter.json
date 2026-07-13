@@ -1,0 +1,44 @@
+{
+  "head" : {
+    "vars" : [ "nameLabel", "birth", "death", "genderLabel", "ulan", "viaf", "image", "isoCodes", "occupations" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "nameLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Gerhard Richter"
+      },
+      "birth" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1932-02-09T00:00:00Z"
+      },
+      "genderLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "male"
+      },
+      "ulan" : {
+        "type" : "literal",
+        "value" : "500003003"
+      },
+      "viaf" : {
+        "type" : "literal",
+        "value" : "98149412"
+      },
+      "image" : {
+        "type" : "uri",
+        "value" : "http://commons.wikimedia.org/wiki/Special:FilePath/Gerhard%20Richter%2C%20Prague%20%282017%29.jpg"
+      },
+      "isoCodes" : {
+        "type" : "literal",
+        "value" : "DE"
+      },
+      "occupations" : {
+        "type" : "literal",
+        "value" : "photographer|artist|painter|university teacher|illustrator|visual artist"
+      }
+    } ]
+  }
+}

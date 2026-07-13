@@ -1,0 +1,36 @@
+{
+  "head" : {
+    "vars" : [ "nameLabel", "birth", "death", "genderLabel", "ulan", "viaf", "image", "isoCodes", "occupations" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "nameLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "KAWS"
+      },
+      "birth" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1974-01-01T00:00:00Z"
+      },
+      "genderLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "male"
+      },
+      "viaf" : {
+        "type" : "literal",
+        "value" : "160122428"
+      },
+      "isoCodes" : {
+        "type" : "literal",
+        "value" : "US"
+      },
+      "occupations" : {
+        "type" : "literal",
+        "value" : "painter|sculptor|visual artist|designer|art collector"
+      }
+    } ]
+  }
+}

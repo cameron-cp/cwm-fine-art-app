@@ -29,6 +29,9 @@ const serverSchema = z.object({
   // STRIPE_WEBHOOK_SECRET verifies the raw-body HMAC on the webhook route.
   STRIPE_SECRET_KEY: optionalSecret,
   STRIPE_WEBHOOK_SECRET: optionalSecret,
+  // Wikimedia etiquette wants a descriptive User-Agent on the keyless authority
+  // APIs (Wikidata/Getty). Optional — the authority lib has a safe default.
+  AUTHORITY_USER_AGENT: optionalSecret,
 });
 
 const publicSchema = z.object({
@@ -58,5 +61,6 @@ export function getServerEnv() {
     EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    AUTHORITY_USER_AGENT: process.env.AUTHORITY_USER_AGENT,
   });
 }
