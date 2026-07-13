@@ -5,10 +5,10 @@ import {
   Callout,
   Flex,
   Select,
-  Text,
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useState, useTransition } from "react";
 import { createRetainer } from "./actions";
 import type { RetainerInterval } from "@/lib/schemas/stripe";
@@ -16,16 +16,6 @@ import type { RetainerInterval } from "@/lib/schemas/stripe";
 type PartyOption = { id: string; display_name: string; email: string | null };
 
 // Local field wrapper (each form in this app defines its own, per convention).
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label>
-      <Text as="div" size="2" weight="medium" mb="1">
-        {label}
-      </Text>
-      {children}
-    </label>
-  );
-}
 
 // Amount is entered in dollars and converted to integer cents before the server
 // action (which re-validates with retainerCreateSchema). On success the browser

@@ -11,6 +11,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -146,7 +147,7 @@ export function SettingsForm({ settings }: { settings: InvoiceSettings }) {
         <Flex direction="column" gap="3">
           <Text as="label" size="2" weight="medium">Terms &amp; Conditions clauses</Text>
           {fields.map((f, i) => (
-            <Flex key={f.id} direction="column" gap="2" className="border border-[var(--gray-a5)] rounded-3 p-3">
+            <Flex key={f.id} direction="column" gap="2" className="border border-[var(--rule)] p-3">
               <Flex justify="between" align="center">
                 <Text size="1" color="gray">Clause {i + 1}</Text>
                 <IconButton type="button" variant="soft" color="red" size="1" onClick={() => remove(i)}>
@@ -176,20 +177,3 @@ export function SettingsForm({ settings }: { settings: InvoiceSettings }) {
   );
 }
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">{label}</Text>
-      {children}
-      {error && <Text size="1" color="red">{error}</Text>}
-    </Flex>
-  );
-}

@@ -12,6 +12,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
@@ -362,19 +363,3 @@ function RelationshipForm({
 
 // Local label+error wrapper — the app's per-form convention (copied, not shared;
 // see the note in the plan's Files section).
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">
-        {label}
-      </Text>
-      {children}
-    </Flex>
-  );
-}

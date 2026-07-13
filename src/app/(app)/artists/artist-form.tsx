@@ -14,6 +14,7 @@ import {
   type ArtistInput,
 } from "@/lib/schemas/artist";
 import type { BioResult, FactFinding } from "@/lib/artist/bio";
+import { Field } from "@/components/field";
 import { ArtistAuthorityPicker, type ResolvedPayload } from "./artist-authority-picker";
 import { createArtist, deleteArtist, generateArtistBio, updateArtist } from "./actions";
 
@@ -197,7 +198,7 @@ export function ArtistForm({ artist }: Props) {
                   {codes.length > 0 && (
                     <Flex gap="2" wrap="wrap">
                       {codes.map((code, i) => (
-                        <Badge key={code} size="2" variant="soft" color={i === 0 ? "iris" : "gray"}>
+                        <Badge key={code} size="2" variant={i === 0 ? "solid" : "soft"} color="gray">
                           {i !== 0 && (
                             <button
                               type="button"
@@ -248,9 +249,9 @@ export function ArtistForm({ artist }: Props) {
 
         <Flex direction="column" gap="1" flexGrow="1">
           <Flex justify="between" align="center" gap="3">
-            <Text as="label" size="2" weight="medium">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-3)]">
               Bio
-            </Text>
+            </label>
             <Button
               type="button"
               size="1"
@@ -258,7 +259,7 @@ export function ArtistForm({ artist }: Props) {
               loading={bioPending}
               onClick={onGenerateBio}
             >
-              ✨ Draft with AI
+              Draft with AI
             </Button>
           </Flex>
           <Text size="1" color="gray">
@@ -319,36 +320,3 @@ function FactCheckNote({ label, finding }: { label: string; finding: FactFinding
   );
 }
 
-function Field({
-  label,
-  error,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">
-        {label}
-        {required && <Text color="red"> *</Text>}
-      </Text>
-      {hint && (
-        <Text size="1" color="gray">
-          {hint}
-        </Text>
-      )}
-      {children}
-      {error && (
-        <Text size="1" color="red">
-          {error}
-        </Text>
-      )}
-    </Flex>
-  );
-}

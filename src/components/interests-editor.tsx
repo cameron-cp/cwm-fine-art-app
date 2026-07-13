@@ -12,6 +12,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { addInterest, deleteInterest } from "@/app/(app)/contacts/interests-actions";
@@ -423,19 +424,3 @@ export function InterestsEditor({
 }
 
 // Local label wrapper — the app's per-form convention (copied, not shared).
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">
-        {label}
-      </Text>
-      {children}
-    </Flex>
-  );
-}

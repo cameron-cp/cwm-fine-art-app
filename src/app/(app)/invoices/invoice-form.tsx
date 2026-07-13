@@ -13,6 +13,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -354,7 +355,7 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
           <Text size="1" color="red">{errors.line_items.message}</Text>
         )}
         {fields.map((f, i) => (
-          <Flex key={f.id} direction="column" gap="2" className="border border-[var(--gray-a5)] rounded-3 p-3">
+          <Flex key={f.id} direction="column" gap="2" className="border border-[var(--rule)] p-3">
             <Flex justify="between" align="center">
               <Text size="1" color="gray">Work {i + 1}</Text>
               {fields.length > 1 && (
@@ -443,7 +444,7 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
           </Field>
         </Flex>
 
-        <Flex direction="column" gap="1" align="end" className="border-t border-[var(--gray-a5)] pt-3">
+        <Flex direction="column" gap="1" align="end" className="border-t border-[var(--rule)] pt-3">
           <Text size="2">Subtotal: {formatInvoiceMoney(totals.subtotal, watchedCurrency)}</Text>
           <Text size="2">Shipping: {formatInvoiceMoney(totals.shipping, watchedCurrency)}</Text>
           <Text size="4" weight="bold">Total: {formatInvoiceMoney(totals.total, watchedCurrency)}</Text>
@@ -503,25 +504,3 @@ function PartySelect({
   );
 }
 
-function Field({
-  label,
-  error,
-  required,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1" flexGrow="1">
-      <Text as="label" size="2" weight="medium">
-        {label}
-        {required && <Text color="red"> *</Text>}
-      </Text>
-      {children}
-      {error && <Text size="1" color="red">{error}</Text>}
-    </Flex>
-  );
-}
