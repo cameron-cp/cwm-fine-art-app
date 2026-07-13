@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Badge,
   Box,
   Button,
   Callout,
@@ -13,6 +12,7 @@ import {
   Spinner,
   Text,
 } from "@radix-ui/themes";
+import { StatusTag, toneFromColor } from "@/components/status-tag";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import {
@@ -164,16 +164,12 @@ export function ConditionReports({ artworkId, reports }: Props) {
 
 function StatusBadge({ status }: { status: ConditionReport["parse_status"] }) {
   const map = {
-    pending: { color: "amber" as const, label: "Reading…" },
-    parsed: { color: "green" as const, label: "Parsed" },
-    failed: { color: "red" as const, label: "Parse failed" },
-  };
+    pending: { color: "amber", label: "Reading…" },
+    parsed: { color: "green", label: "Parsed" },
+    failed: { color: "red", label: "Parse failed" },
+  } as const;
   const { color, label } = map[status];
-  return (
-    <Badge color={color} variant="soft">
-      {label}
-    </Badge>
-  );
+  return <StatusTag tone={toneFromColor(color)}>{label}</StatusTag>;
 }
 
 function ReportCard({
@@ -230,7 +226,9 @@ function ReportCard({
           <Flex direction="column" gap="3">
             {p.overall_condition && (
               <Detail label="Overall">
-                <Badge variant="soft">{CONDITION_RATING_LABELS[p.overall_condition]}</Badge>
+                <span className="inline-block border border-[var(--rule-2)] px-[7px] py-[2px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink-2)]">
+                  {CONDITION_RATING_LABELS[p.overall_condition]}
+                </span>
               </Detail>
             )}
             {p.summary && <Detail label="Summary">{p.summary}</Detail>}

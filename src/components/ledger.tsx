@@ -13,12 +13,14 @@ export const LEDGER_HEAD =
 export function Th({
   children,
   align,
+  width,
 }: {
   children?: ReactNode;
   align?: "left" | "center" | "right";
+  width?: string;
 }) {
   return (
-    <Table.ColumnHeaderCell align={align}>
+    <Table.ColumnHeaderCell align={align} width={width}>
       {children ? <span className={LEDGER_HEAD}>{children}</span> : null}
     </Table.ColumnHeaderCell>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Badge,
   Button,
   Callout,
   Card,
@@ -37,14 +36,6 @@ type ArtistOption = { id: string; name: string };
 
 // UI-only sentinel for the "Add nationality…"/artist empty state (resolved before Zod).
 const ADD = "__add__";
-
-const SENTIMENT_COLOR: Record<InterestSentiment, "iris" | "green" | "blue" | "gray" | "red"> = {
-  seeking: "iris",
-  collects: "green",
-  owns: "blue",
-  watching: "gray",
-  avoid: "red",
-};
 
 type Draft = {
   dimension: InterestDimension;
@@ -192,9 +183,9 @@ export function InterestsEditor({
               <Card key={row.id}>
                 <Flex justify="between" align="center" gap="3">
                   <Flex align="center" gap="2" wrap="wrap">
-                    <Badge color={SENTIMENT_COLOR[row.sentiment]} variant="soft">
+                    <span className="inline-block border border-[var(--rule-2)] px-[7px] py-[2px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink-2)]">
                       {INTEREST_SENTIMENT_LABELS[row.sentiment]}
-                    </Badge>
+                    </span>
                     <Text size="2" weight="medium">
                       {label}
                     </Text>
