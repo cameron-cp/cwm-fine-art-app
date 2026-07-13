@@ -3,7 +3,6 @@
 import {
   Box,
   Button,
-  Callout,
   Card,
   Flex,
   Heading,
@@ -12,6 +11,7 @@ import {
   Spinner,
   Text,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { StatusTag, toneFromColor } from "@/components/status-tag";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
@@ -125,9 +125,9 @@ export function ConditionReports({ artworkId, reports }: Props) {
       )}
 
       {error && (
-        <Callout.Root color="red" size="1" mb="3">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
+        <Alert tone="error" className="mb-3">
+          {error}
+        </Alert>
       )}
 
       {reports.length === 0 ? (

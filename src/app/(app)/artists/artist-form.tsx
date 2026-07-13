@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Badge, Button, Callout, Flex, Select, Text, TextArea, TextField } from "@radix-ui/themes";
+import { Badge, Button, Flex, Select, Text, TextArea, TextField } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -128,9 +129,7 @@ export function ArtistForm({ artist }: Props) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <Flex direction="column" gap="4" maxWidth="540px">
         {error && (
-          <Callout.Root color="red">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <input type="hidden" {...register("canonical_artist_id")} />

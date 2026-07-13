@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Callout,
   Checkbox,
   Flex,
   IconButton,
@@ -14,6 +13,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -158,9 +158,7 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <Flex direction="column" gap="4" maxWidth="620px">
         {error && (
-          <Callout.Root color="red">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <Field label="Type">

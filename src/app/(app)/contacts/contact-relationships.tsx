@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Callout,
   Card,
   Flex,
   Heading,
@@ -12,6 +11,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -161,9 +161,7 @@ export function ContactRelationships({
       </Flex>
 
       {error && (
-        <Callout.Root color="red">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
+        <Alert tone="error">{error}</Alert>
       )}
 
       {relationships.length === 0 && mode === "idle" ? (

@@ -2,12 +2,12 @@
 
 import {
   Button,
-  Callout,
   Flex,
   Select,
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useState, useTransition } from "react";
 import { createRetainer } from "./actions";
@@ -115,9 +115,7 @@ export function RetainerForm({ parties }: { parties: PartyOption[] }) {
         </Field>
 
         {error && (
-          <Callout.Root color="red" size="1">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <Flex>

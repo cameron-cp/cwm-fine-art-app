@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Callout, Card, Flex, Text } from "@radix-ui/themes";
+import { Button, Card, Flex, Text } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { useState, useTransition } from "react";
 import {
   addPaymentMethod,
@@ -57,9 +58,7 @@ export function ContactPaymentMethods({
           )}
         </Flex>
         {error && (
-          <Callout.Root color="red" size="1">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
+          <Alert tone="error">{error}</Alert>
         )}
       </Flex>
     </Card>

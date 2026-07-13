@@ -3,12 +3,12 @@
 import {
   Box,
   Button,
-  Callout,
   Container,
   Flex,
   Heading,
   Text,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -58,9 +58,9 @@ export default function ImportArtworkPage() {
       </Text>
 
       {error && (
-        <Callout.Root color="red" mb="4">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
       )}
 
       <Box

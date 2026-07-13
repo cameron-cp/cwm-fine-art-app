@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Callout,
   Flex,
   Heading,
   IconButton,
@@ -13,6 +12,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -247,9 +247,7 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <Flex direction="column" gap="5" maxWidth="760px">
         {error && (
-          <Callout.Root color="red">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <Heading size="4">Buyer</Heading>
@@ -383,9 +381,7 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
             </Field>
 
             {mismatch[i] && (
-              <Callout.Root color="orange" size="1">
-                <Callout.Text>{mismatch[i]}</Callout.Text>
-              </Callout.Root>
+              <Alert tone="warning">{mismatch[i]}</Alert>
             )}
 
             <Flex gap="3">

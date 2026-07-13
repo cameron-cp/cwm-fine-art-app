@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Callout,
   Flex,
   Heading,
   IconButton,
@@ -11,6 +10,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -77,16 +77,8 @@ export function SettingsForm({ settings }: { settings: InvoiceSettings }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Flex direction="column" gap="5" maxWidth="640px">
-        {error && (
-          <Callout.Root color="red">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
-        )}
-        {saved && (
-          <Callout.Root color="green">
-            <Callout.Text>Settings saved.</Callout.Text>
-          </Callout.Root>
-        )}
+        {error && <Alert tone="error">{error}</Alert>}
+        {saved && <Alert tone="success">Settings saved.</Alert>}
 
         <Heading size="4">Business</Heading>
         <Field label="Business name" error={errors.business_name?.message}>

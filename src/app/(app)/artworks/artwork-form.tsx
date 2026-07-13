@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Callout,
   Flex,
   IconButton,
   Select,
@@ -11,6 +10,7 @@ import {
   TextArea,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
@@ -268,9 +268,7 @@ export function ArtworkForm(props: Props) {
     <form onSubmit={handleSubmit(onSubmit)}>
       <Flex direction="column" gap="4" maxWidth="640px">
         {error && (
-          <Callout.Root color="red">
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <Field label="Artist" error={errors.artist_id?.message} required>

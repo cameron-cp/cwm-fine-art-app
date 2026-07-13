@@ -1,7 +1,8 @@
 "use client";
 
-import { Button, Callout, Flex } from "@radix-ui/themes";
+import { Button, Flex } from "@radix-ui/themes";
 import { useState } from "react";
+import { Alert } from "@/components/alert";
 
 type Props = {
   artworkId: string;
@@ -50,9 +51,7 @@ export function GenerateTearsheetButton({
         Generate Tearsheet
       </Button>
       {error && (
-        <Callout.Root color="red" size="1">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
+        <Alert tone="error">{error}</Alert>
       )}
     </Flex>
   );

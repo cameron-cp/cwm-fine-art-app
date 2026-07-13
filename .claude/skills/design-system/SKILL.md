@@ -48,6 +48,7 @@ screen; type does the work; the app and the tearsheet share one voice.
 - Buttons: solid claret = the single primary action; everything else `variant="outline"` or `variant="ghost"`.
 - Status: a dot + uppercase word — never bright candy pills.
 - Cards / frames: hairline borders + raised paper surface, no shadows. Artwork imagery gets a passe-partout mount (mat inside a hairline frame), not a shadow.
+- Alerts / callouts: use the shared `<Alert tone="info|success|warning|error">` (`@/components/alert`) — NEVER raw Radix `Callout` with a `color` prop. Tones map to sage/amber/ink + functional `--danger` red; no green/blue/orange.
 
 **The signature — museum wall label** (list, detail, and tearsheet, identical):
 ```
@@ -70,6 +71,7 @@ Reject your own diff if any is true:
 - [ ] A heading set in the grotesque instead of the serif.
 - [ ] Numbers (price/dims/dates) not in tabular mono / missing `.num`.
 - [ ] `rounded-*`, a drop shadow, or a candy-pill badge on a new element.
+- [ ] A raw Radix `Callout color=...` instead of `<Alert tone=...>`.
 - [ ] Status color borrowing the accent instead of sage/amber.
 - [ ] Centered-everything layout instead of asymmetry + wide margins.
 

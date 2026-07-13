@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Callout, Flex } from "@radix-ui/themes";
+import { Button, Flex } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { useState, useTransition } from "react";
 import {
   createInvoiceCheckout,
@@ -85,16 +86,8 @@ export function InvoicePaymentActions({
           Check Stripe status
         </Button>
       </Flex>
-      {info && (
-        <Callout.Root color="green" size="1">
-          <Callout.Text>{info}</Callout.Text>
-        </Callout.Root>
-      )}
-      {error && (
-        <Callout.Root color="red" size="1">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
-      )}
+      {info && <Alert tone="success">{info}</Alert>}
+      {error && <Alert tone="error">{error}</Alert>}
     </Flex>
   );
 }
