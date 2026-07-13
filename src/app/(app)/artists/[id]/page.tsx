@@ -60,18 +60,19 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
 
   return (
     <Container size="4" py="6">
-      <Box mb="5">
-        <Text size="2" color="gray">
-          <Link href="/artists" className="hover:underline">
-            ← All artists
-          </Link>
-        </Text>
-        <Heading size="7" mt="1">
+      <Box mb="6">
+        <Link
+          href="/artists"
+          className="text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)] hover:text-[var(--ink)]"
+        >
+          ← All artists
+        </Link>
+        <Heading size="8" weight="medium" mt="2">
           {artist.name}
         </Heading>
-        <Text size="2" color="gray">
+        <div className="num mt-1 text-[13px] text-[var(--ink-3)]">
           {formatByline(formatNationalities(nationalities), artist.birth_year, artist.death_year)}
-        </Text>
+        </div>
       </Box>
 
       <ArtistForm artist={artist} />
@@ -79,13 +80,13 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
       <Separator size="4" my="6" />
 
       <Flex justify="between" align="center" mb="4">
-        <Heading size="5">
+        <Heading size="6" weight="medium">
           Works{" "}
-          <Text size="3" color="gray" weight="regular">
+          <Text size="3" weight="regular" style={{ color: "var(--ink-3)" }}>
             ({works.length})
           </Text>
         </Heading>
-        <Button asChild>
+        <Button asChild variant="outline" color="gray">
           <Link href={`/artworks/new?artist=${artist.id}`}>Add artwork</Link>
         </Button>
       </Flex>
@@ -97,10 +98,10 @@ export default async function EditArtistPage({ params }: { params: Promise<{ id:
           justify="center"
           gap="3"
           py="8"
-          className="border border-dashed border-[var(--gray-a6)] rounded-3"
+          className="border border-[var(--rule)]"
         >
-          <Text color="gray">No works for this artist yet.</Text>
-          <Button asChild variant="soft">
+          <Text style={{ color: "var(--ink-3)" }}>No works for this artist yet.</Text>
+          <Button asChild variant="outline" color="gray">
             <Link href={`/artworks/new?artist=${artist.id}`}>Add the first work</Link>
           </Button>
         </Flex>

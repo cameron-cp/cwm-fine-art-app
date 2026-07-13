@@ -1,4 +1,4 @@
-import { Box, Container, Flex, Heading, Separator, Text } from "@radix-ui/themes";
+import { Box, Container, Flex, Heading, Separator } from "@radix-ui/themes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchAddressOptions } from "../address-options";
@@ -86,12 +86,13 @@ export default async function EditArtworkPage({
     <Container size="4" py="6">
       <Flex justify="between" align="start" mb="5" gap="4" wrap="wrap">
         <Box>
-          <Text size="2" color="gray">
-            <Link href="/artworks" className="hover:underline">
-              ← All artworks
-            </Link>
-          </Text>
-          <Heading size="7" mt="1">
+          <Link
+            href="/artworks"
+            className="text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)] hover:text-[var(--ink)]"
+          >
+            ← All artworks
+          </Link>
+          <Heading size="8" weight="medium" mt="2">
             {artwork.title}
           </Heading>
         </Box>
