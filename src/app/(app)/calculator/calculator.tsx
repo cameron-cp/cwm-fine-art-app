@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Badge,
   Button,
   Card,
   Flex,
@@ -11,6 +10,8 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
+import { Th } from "@/components/ledger";
+import { StatusTag } from "@/components/status-tag";
 import { useMemo, useState } from "react";
 import {
   AUCTION_FLAT_RATE,
@@ -177,17 +178,17 @@ export function Calculator() {
         </Flex>
       </Flex>
 
-      <Table.Root variant="surface">
+      <Table.Root variant="ghost">
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeaderCell width="140px">Direction</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Artist</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="200px">Value (USD)</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="180px" align="right">
+            <Th width="140px">Direction</Th>
+            <Th>Title</Th>
+            <Th>Artist</Th>
+            <Th width="200px">Value (USD)</Th>
+            <Th width="180px" align="right">
               Fee
-            </Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="48px" />
+            </Th>
+            <Th width="48px" />
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -238,9 +239,9 @@ export function Calculator() {
                         {isSale ? "+" : "−"}
                         {usd.format(rowFee)}
                       </Text>
-                      <Badge color={isSale ? "green" : "red"} size="1" variant="soft">
+                      <StatusTag tone={isSale ? "positive" : "warning"}>
                         {isSale ? "collect" : "pay"}
-                      </Badge>
+                      </StatusTag>
                     </Flex>
                   ) : (
                     <Text color="gray">—</Text>

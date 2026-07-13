@@ -2,6 +2,7 @@ import { Button, Card, Container, Flex, Heading, Separator, Table, Text } from "
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
+import { Th } from "@/components/ledger";
 import {
   InvoicePaymentActions,
   InvoicePaymentBadge,
@@ -41,7 +42,9 @@ export default async function InvoiceDetailPage({
       <Flex justify="between" align="start" mb="4">
         <div>
           <Flex align="center" gap="3">
-            <Heading size="7">Invoice {number}</Heading>
+            <Heading size="7" weight="medium">
+              Invoice {number}
+            </Heading>
             <InvoicePaymentBadge status={invoice.payment_status} />
           </Flex>
           <Text color="gray" size="2">
@@ -75,22 +78,33 @@ export default async function InvoiceDetailPage({
         </Flex>
       </Card>
 
-      <Table.Root variant="surface" mb="4">
+      <Table.Root variant="ghost" mb="4">
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeaderCell>Work</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell align="right">Amount</Table.ColumnHeaderCell>
+            <Th>Work</Th>
+            <Th align="right">Amount</Th>
           </Table.Row>
         </Table.Header>
         <Table.Body>
           {items.map((it) => (
-            <Table.Row key={it.id}>
+            <Table.Row key={it.id} align="center">
               <Table.Cell>
-                <Text weight="medium">{it.artist_name ? `${it.artist_name} — ` : ""}{it.title}</Text>
-                {it.medium && <Text as="div" size="1" color="gray">{it.medium}</Text>}
-                {it.dimensions_text && <Text as="div" size="1" color="gray">{it.dimensions_text}</Text>}
+                <div className="font-serif text-[15px] text-[var(--ink)]">
+                  {it.artist_name ? `${it.artist_name} — ` : ""}
+                  <span className="italic">{it.title}</span>
+                </div>
+                {it.medium && (
+                  <div className="text-[11px] uppercase tracking-[0.12em] text-[var(--ink-3)]">
+                    {it.medium}
+                  </div>
+                )}
+                {it.dimensions_text && (
+                  <div className="num text-[12px] text-[var(--ink-3)]">{it.dimensions_text}</div>
+                )}
               </Table.Cell>
-              <Table.Cell align="right">{money(it.amount_cents)}</Table.Cell>
+              <Table.Cell align="right">
+                <span className="num text-[14px] text-[var(--ink)]">{money(it.amount_cents)}</span>
+              </Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>

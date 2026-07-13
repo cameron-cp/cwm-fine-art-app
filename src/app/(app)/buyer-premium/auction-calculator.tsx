@@ -11,6 +11,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
+import { Th } from "@/components/ledger";
 import { useState } from "react";
 import {
   HOUSES,
@@ -200,19 +201,19 @@ export function AuctionCalculator() {
         </Flex>
       </Flex>
 
-      <Table.Root variant="surface">
+      <Table.Root variant="ghost">
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeaderCell>Title</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Artist</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="220px">Hammer ({location.currency})</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="180px" align="right">
+            <Th>Title</Th>
+            <Th>Artist</Th>
+            <Th width="220px">Hammer ({location.currency})</Th>
+            <Th width="180px" align="right">
               Buyer&apos;s premium
-            </Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="180px" align="right">
+            </Th>
+            <Th width="180px" align="right">
               Total payable
-            </Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell width="48px" />
+            </Th>
+            <Th width="48px" />
           </Table.Row>
         </Table.Header>
         <Table.Body>

@@ -1,7 +1,8 @@
 "use client";
 
-import { Badge, Box, Button, Callout, Flex, IconButton, Text } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex, IconButton, Text } from "@radix-ui/themes";
 import Image from "next/image";
+import { StatusTag } from "@/components/status-tag";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import {
@@ -165,9 +166,7 @@ export function ImageManager({ artworkId, images, primaryPath }: Props) {
 
                 <Flex direction="column" gap="2" flexGrow="1">
                   {isHero ? (
-                    <Badge color="green" variant="soft">
-                      Tearsheet hero
-                    </Badge>
+                    <StatusTag tone="positive">Tearsheet hero</StatusTag>
                   ) : (
                     <Button
                       size="1"
