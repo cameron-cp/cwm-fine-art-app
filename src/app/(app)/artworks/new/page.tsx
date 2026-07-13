@@ -1,4 +1,5 @@
-import { Callout, Container, Heading } from "@radix-ui/themes";
+import { Container, Heading } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import Link from "next/link";
 import { fetchAddressOptions } from "../address-options";
 import { ArtworkForm } from "../artwork-form";
@@ -29,15 +30,13 @@ export default async function NewArtworkPage({
       </Heading>
 
       {artists.length === 0 ? (
-        <Callout.Root>
-          <Callout.Text>
-            Add an{" "}
-            <Link href="/artists/new" className="text-[var(--ink)] underline">
-              artist
-            </Link>{" "}
-            first — every artwork belongs to one.
-          </Callout.Text>
-        </Callout.Root>
+        <Alert tone="info">
+          Add an{" "}
+          <Link href="/artists/new" className="text-[var(--ink)] underline">
+            artist
+          </Link>{" "}
+          first — every artwork belongs to one.
+        </Alert>
       ) : (
         <ArtworkForm
           artists={artists}

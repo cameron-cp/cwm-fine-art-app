@@ -1,7 +1,8 @@
 "use client";
 
-import { Box, Button, Callout, Flex, IconButton, Text } from "@radix-ui/themes";
+import { Box, Button, Flex, IconButton, Text } from "@radix-ui/themes";
 import Image from "next/image";
+import { Alert } from "@/components/alert";
 import { StatusTag } from "@/components/status-tag";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
@@ -117,9 +118,9 @@ export function ImageManager({ artworkId, images, primaryPath }: Props) {
       </Flex>
 
       {error && (
-        <Callout.Root color="red" size="1" mb="3">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
+        <Alert tone="error" className="mb-3">
+          {error}
+        </Alert>
       )}
 
       {images.length === 0 ? (

@@ -1,4 +1,5 @@
-import { Callout, Container, Heading, Text } from "@radix-ui/themes";
+import { Container, Heading, Text } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import Link from "next/link";
 import { z } from "zod";
 import { ImportReview } from "./import-review";
@@ -55,12 +56,10 @@ export default async function ReviewImportPage({
         <Heading size="7" mb="3">
           Review import
         </Heading>
-        <Callout.Root color="red">
-          <Callout.Text>
-            This draft is corrupted ({parsed.error.issues[0]?.message ?? "invalid"}).
-            Please re-upload the PDF.
-          </Callout.Text>
-        </Callout.Root>
+        <Alert tone="error">
+          This draft is corrupted ({parsed.error.issues[0]?.message ?? "invalid"}). Please
+          re-upload the PDF.
+        </Alert>
       </Container>
     );
   }
@@ -88,19 +87,13 @@ function ExpiredPanel() {
       <Heading size="7" mb="3">
         Review import
       </Heading>
-      <Callout.Root color="amber">
-        <Callout.Text>
-          This import draft expired or doesn&apos;t exist. Drafts are kept for 30
-          minutes —{" "}
-          <Link
-            href="/artworks/import"
-            className="text-[var(--ink)] underline"
-          >
-            re-upload the PDF
-          </Link>{" "}
-          to start over.
-        </Callout.Text>
-      </Callout.Root>
+      <Alert tone="warning">
+        This import draft expired or doesn&apos;t exist. Drafts are kept for 30 minutes —{" "}
+        <Link href="/artworks/import" className="text-[var(--ink)] underline">
+          re-upload the PDF
+        </Link>{" "}
+        to start over.
+      </Alert>
     </Container>
   );
 }

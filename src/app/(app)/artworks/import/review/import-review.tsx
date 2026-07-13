@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  Button,
-  Callout,
-  Flex,
-  Select,
-  Text,
-} from "@radix-ui/themes";
+import { Button, Flex, Select } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { useState, useTransition } from "react";
 import { ArtworkForm } from "../../artwork-form";
 import { createArtist } from "@/app/(app)/artists/actions";
@@ -82,45 +77,37 @@ export function ImportReview({ draft, artists: initialArtists }: Props) {
   return (
     <Flex direction="column" gap="4">
       {showTitleWarning && (
-        <Callout.Root color="amber">
-          <Callout.Text>
-            Couldn&apos;t read a title from the PDF — please add one before saving.
-          </Callout.Text>
-        </Callout.Root>
+        <Alert tone="warning">
+          Couldn&apos;t read a title from the PDF — please add one before saving.
+        </Alert>
       )}
 
       {showCreateCallout && (
-        <Callout.Root color="blue">
+        <Alert tone="info">
           <Flex direction="column" gap="2">
-            <Callout.Text>
+            <div>
               No artist matches{" "}
-              <strong>&ldquo;{draft.suggested_artist_name}&rdquo;</strong> in
-              your inventory. Create them now?
-            </Callout.Text>
+              <strong>&ldquo;{draft.suggested_artist_name}&rdquo;</strong> in your
+              inventory. Create them now?
+            </div>
             {creationError && (
-              <Text color="red" size="2">
+              <span className="text-[13px]" style={{ color: "var(--danger)" }}>
                 {creationError}
-              </Text>
+              </span>
             )}
             <Flex gap="2">
-              <Button
-                size="2"
-                onClick={handleCreateArtist}
-                loading={creatingArtist}
-              >
+              <Button size="2" onClick={handleCreateArtist} loading={creatingArtist}>
                 Create artist &ldquo;{draft.suggested_artist_name}&rdquo;
               </Button>
             </Flex>
           </Flex>
-        </Callout.Root>
+        </Alert>
       )}
 
       {showCandidateCallout && (
-        <Callout.Root color="amber">
+        <Alert tone="warning">
           <Flex direction="column" gap="2">
-            <Callout.Text>
-              Multiple artists match this name. Pick one:
-            </Callout.Text>
+            <div>Multiple artists match this name. Pick one:</div>
             <Select.Root
               onValueChange={(id) => setArtistIdOverride(id)}
             >
@@ -134,7 +121,7 @@ export function ImportReview({ draft, artists: initialArtists }: Props) {
               </Select.Content>
             </Select.Root>
           </Flex>
-        </Callout.Root>
+        </Alert>
       )}
 
       <ArtworkForm

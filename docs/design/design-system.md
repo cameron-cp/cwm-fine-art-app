@@ -42,8 +42,9 @@ decision matters. Semantic status tones (sage/amber) never borrow the accent.
 | `--claret` | `#7A2E2E` | **Accent** — primary action & active state only |
 | `--claret-hover` | `#6A2727` | Accent hover |
 | `--on-claret` | `#FBF7F2` | Text on claret |
-| `--sage` | `#5C6B5A` | Semantic: available |
-| `--amber` | `#8A6A2A` | Semantic: on hold |
+| `--sage` | `#5C6B5A` | Semantic: available / success |
+| `--amber` | `#8A6A2A` | Semantic: on hold / warning |
+| `--danger` | `#B42318` | Functional error red (alerts + validation only) — **not** the brand accent |
 | `--rule` | `rgba(27,26,23,.14)` | Hairline division (no shadows) |
 | `--rule-2` | `rgba(27,26,23,.30)` | Stronger rule / input border |
 
@@ -62,6 +63,7 @@ decision matters. Semantic status tones (sage/amber) never borrow the accent.
 | `--on-claret` | `#1A1815` |
 | `--sage` | `#93A38F` |
 | `--amber` | `#C7A15A` |
+| `--danger` | `#E5675E` |
 | `--rule` | `rgba(236,233,225,.15)` |
 | `--rule-2` | `rgba(236,233,225,.32)` |
 
@@ -126,6 +128,27 @@ drop shadow — depth from a mat and a rule.
   artist + italic title in the first cell, right-aligned tabular mono for price/year.
   Row hover → `--paper-2`. Wrap in `overflow-x:auto`.
 - **Cards / frames** — hairline borders and the raised paper surface. No shadows.
+
+---
+
+## Alerts & feedback
+
+Transient banners (success confirmations, info prompts, warnings, errors) use the one
+shared **`<Alert tone>`** primitive (`src/components/alert.tsx`) — never raw Radix
+`Callout` with a `color` prop, which reintroduces off-palette hue.
+
+| tone | token | glyph | use |
+|---|---|---|---|
+| `info` | `--ink-3` (neutral) | i | neutral prompts / guidance |
+| `success` | `--sage` | ✓ | "saved", completed actions |
+| `warning` | `--amber` | ! | recoverable issues, mismatches, expiry |
+| `error` | `--danger` | ✕ | failures, blocked actions |
+
+Quiet by design: a 2px tone-colored left rule + glyph on a `--paper-2` surface, hairline
+border — never a saturated fill. `--danger` is a **functional** red for errors +
+validation only; it is deliberately distinct from the claret brand accent and is never
+used for status, emphasis, or decoration. Inline validation errors may also use
+`--danger` (or Radix `color="red"`), but there is no green/blue/orange anywhere.
 
 ---
 

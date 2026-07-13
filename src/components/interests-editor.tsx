@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Callout,
   Card,
   Flex,
   Heading,
@@ -11,6 +10,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
+import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
@@ -165,9 +165,7 @@ export function InterestsEditor({
       )}
 
       {error && (
-        <Callout.Root color="red">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
+        <Alert tone="error">{error}</Alert>
       )}
 
       {interests.length === 0 && !adding ? (
