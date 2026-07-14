@@ -152,6 +152,26 @@ used for status, emphasis, or decoration. Inline validation errors may also use
 
 ---
 
+## Conversation — the Registrar chat
+
+The chat view (`/chat`, docs/chat-agent.md) is a **transcript, not a messenger**: no
+bubbles, no avatars, no left/right alignment games. It reads like a ledger of exchanges
+on the plaster ground.
+
+- Each turn is a full-width entry separated by a `--rule` hairline; the speaker is a
+  letterspaced uppercase micro-cap label (`You` / `Registrar`) in `--ink-3`.
+- Answers are plain grotesque body text. Artist/title mentions stay inline prose —
+  the wall-label treatment belongs to the cited records, not the chat text.
+- **Citations**: beneath an answer, a `Records` micro-cap label followed by underlined
+  links to the artworks / contacts / artists consulted. The trail is the trust surface —
+  never suppress it.
+- **Writes**: a recorded interest confirms as a sage dot + uppercase `Recorded` + a plain
+  restatement — the StatusTag idiom, not a toast, not a candy pill.
+- The Send/Ask button is the view's single claret action. The waiting state is a serif
+  italic line ("Consulting the records…"), not a spinner.
+
+---
+
 ## Implementation — Radix Themes mapping
 
 The app is already on Radix Themes. This is **three swaps plus a token layer**, not a
