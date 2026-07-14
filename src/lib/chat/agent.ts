@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveFeatureModel } from "@/lib/ai/models";
 import {
   executeRegistrarTool,
   REGISTRAR_TOOLS,
@@ -26,6 +25,7 @@ Rules:
 - Refer to works as Artist, Title (year). Quote prices exactly as the records return them.
 - Be brief and concrete: prose, not bullet-point dumps. Lead with the answer. No preamble.`;
 
+const MODEL = "claude-opus-4-8";
 const MAX_ROUNDS = 8;
 
 export type ChatTurnMessage = { role: "user" | "assistant"; content: string };
@@ -52,7 +52,6 @@ export async function runRegistrar(
   apiKey: string,
 ): Promise<{ reply: string; toolEvents: ToolEvent[] }> {
   const client = new Anthropic({ apiKey });
-  const { model } = resolveFeatureModel("chat");
   const messages: Anthropic.MessageParam[] = history.map((m) => ({
     role: m.role,
     content: m.content,
@@ -61,7 +60,7 @@ export async function runRegistrar(
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const response = await client.messages.create({
-      model,
+      model: MODEL,
       max_tokens: 2048,
       system: [
         {
