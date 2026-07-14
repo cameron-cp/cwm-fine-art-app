@@ -16,7 +16,6 @@ import Anthropic from "@anthropic-ai/sdk";
 // whether "Spanish, 1881–1973" is right for Picasso, and this is judgment under
 // ambiguity, so it's the model's job, not deterministic code's.
 
-const MODEL = "claude-opus-4-8";
 const MAX_BIO_CHARS = 1200;
 
 // Frozen so it hits the Anthropic prompt cache across generations. Edits
@@ -129,7 +128,11 @@ function clampToSentence(text: string, max: number): string {
   return (lastStop > max * 0.5 ? slice.slice(0, lastStop + 1) : slice).trim();
 }
 
-export async function generateArtistBio(facts: BioFacts, apiKey: string): Promise<BioResult> {
+export async function generateArtistBio(
+  facts: BioFacts,
+  apiKey: string,
+  model: string,
+): Promise<BioResult> {
   const client = new Anthropic({ apiKey });
 
   const worksLines = facts.works
@@ -150,7 +153,7 @@ export async function generateArtistBio(facts: BioFacts, apiKey: string): Promis
   let response: Anthropic.Messages.Message;
   try {
     response = await client.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 2048,
       system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       tools: [BIO_TOOL],

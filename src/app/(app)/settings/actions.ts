@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { AI_FEATURES, AiConfigError, type AiFeature } from "@/lib/ai/models";
+import { resetAiModelSetting, saveAiModelSetting } from "@/lib/ai/settings";
 import { invoiceSettingsSchema } from "@/lib/schemas/invoice";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
@@ -41,5 +44,40 @@ export async function updateInvoiceSettings(
 
   revalidatePath("/settings");
   revalidatePath("/invoices");
+  return { data: { ok: true } };
+}
+
+// The dropdown submits either "default" (revert to env/code) or a
+// "provider:model" pair. Feature is constrained to the known AI features.
+const aiModelSchema = z.object({
+  feature: z.enum(AI_FEATURES as unknown as [AiFeature, ...AiFeature[]]),
+  // "default" | "<provider>:<model>"
+  value: z.string().min(1),
+});
+
+export async function updateAiModel(input: unknown): Promise<Result<{ ok: true }>> {
+  const parsed = aiModelSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid selection" };
+  }
+  const { feature, value } = parsed.data;
+  const supabase = getSupabaseServer();
+
+  try {
+    if (value === "default") {
+      await resetAiModelSetting(supabase, feature);
+    } else {
+      const colon = value.indexOf(":");
+      if (colon === -1) return { error: "Selection must be provider:model." };
+      const provider = value.slice(0, colon);
+      const model = value.slice(colon + 1);
+      await saveAiModelSetting(supabase, feature, provider, model);
+    }
+  } catch (e) {
+    if (e instanceof AiConfigError) return { error: e.message };
+    return { error: e instanceof Error ? e.message : "Could not save the model choice." };
+  }
+
+  revalidatePath("/settings");
   return { data: { ok: true } };
 }

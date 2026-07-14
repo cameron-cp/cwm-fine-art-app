@@ -67,11 +67,12 @@ export async function extractConditionReport(
   bytes: ArrayBuffer,
   mimeType: string,
   apiKey: string,
+  model: string,
 ): Promise<ConditionReportParse> {
   const client = new Anthropic({ apiKey });
 
   const response = await client.messages.create({
-    model: "claude-opus-4-8",
+    model,
     max_tokens: 4096,
     system: [
       {

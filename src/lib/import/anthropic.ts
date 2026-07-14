@@ -45,12 +45,13 @@ export class ExtractionError extends Error {
 export async function extractArtworkFromPdf(
   pdf: ArrayBuffer,
   apiKey: string,
+  model: string,
 ): Promise<ModelOutput> {
   const client = new Anthropic({ apiKey });
   const base64 = Buffer.from(pdf).toString("base64");
 
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
+    model,
     max_tokens: 4096,
     system: [
       {

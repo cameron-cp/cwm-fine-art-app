@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getEffectiveFeatureModel } from "@/lib/ai/settings";
 import { extractConditionReport } from "@/lib/condition/anthropic";
 import { getServerEnv } from "@/lib/env";
 import { artworkSchema, type ArtworkInput } from "@/lib/schemas/artwork";
@@ -248,10 +249,12 @@ async function parseAndStore(reportId: string): Promise<void> {
 
   try {
     const bytes = await file.arrayBuffer();
+    const { model } = await getEffectiveFeatureModel("condition", supabase);
     const parsed = await extractConditionReport(
       bytes,
       report.mime_type,
       env.ANTHROPIC_API_KEY,
+      model,
     );
     await supabase
       .from("condition_reports")
