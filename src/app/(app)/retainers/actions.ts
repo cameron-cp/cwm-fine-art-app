@@ -5,6 +5,7 @@ import { publicEnv } from "@/lib/env";
 import { retainerCreateSchema } from "@/lib/schemas/stripe";
 import type { Party } from "@/lib/schemas/party";
 import { getStripe } from "@/lib/stripe/client";
+import { requestOptionsFor, resolveStripeContext } from "@/lib/stripe/context";
 import {
   cancelRetainerSubscription,
   createRetainerCheckoutSession,
@@ -54,6 +55,7 @@ export async function createRetainer(
     billingInterval: data.billing_interval,
     description: data.description,
     appUrl,
+    ctx: await resolveStripeContext(),
   });
   if ("error" in session) return { error: session.error };
 
@@ -89,9 +91,12 @@ export async function cancelRetainer(id: string): Promise<Result<{ id: string }>
     .maybeSingle();
   if (!retainer) return { error: "Retainer not found." };
 
-  const result = await cancelRetainerSubscription({
-    stripe_subscription_id: retainer.stripe_subscription_id as string | null,
-  });
+  const result = await cancelRetainerSubscription(
+    {
+      stripe_subscription_id: retainer.stripe_subscription_id as string | null,
+    },
+    await resolveStripeContext(),
+  );
   if ("error" in result) return { error: result.error };
 
   const { error } = await supabase
@@ -126,15 +131,22 @@ export async function reconcileRetainer(
   if (!sessionId) return { error: "No checkout session to reconcile." };
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const options = requestOptionsFor(await resolveStripeContext());
+    const session = await stripe.checkout.sessions.retrieve(
+      sessionId,
+      undefined,
+      options,
+    );
     const subId = idOf(session.subscription);
     if (!subId) {
       return { error: "Retainer checkout is not complete yet." };
     }
     const facts = subscriptionFacts(
-      await stripe.subscriptions.retrieve(subId, {
-        expand: ["items.data.price"],
-      }),
+      await stripe.subscriptions.retrieve(
+        subId,
+        { expand: ["items.data.price"] },
+        options,
+      ),
     );
     const m = session.metadata ?? {};
 

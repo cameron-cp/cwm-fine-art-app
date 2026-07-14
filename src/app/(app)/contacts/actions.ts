@@ -11,6 +11,7 @@ import {
   createBillingPortalSession,
   createSetupCheckoutSession,
 } from "@/lib/stripe/customers";
+import { resolveStripeContext } from "@/lib/stripe/context";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 type Result<T> = { data: T } | { error: string };
@@ -337,6 +338,7 @@ export async function addPaymentMethod(
     party: party.data,
     appUrl,
     returnPath: `/contacts/${id}`,
+    ctx: await resolveStripeContext(),
   });
   if ("error" in result) return { error: result.error };
 
@@ -358,6 +360,7 @@ export async function openBillingPortal(
     party: party.data,
     appUrl,
     returnPath: `/contacts/${id}`,
+    ctx: await resolveStripeContext(),
   });
   if ("error" in result) return { error: result.error };
   return { data: { url: result.data.url } };

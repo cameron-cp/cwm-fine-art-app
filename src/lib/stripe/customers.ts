@@ -1,5 +1,6 @@
 import { getStripe } from "./client";
 import { buildSetupCheckoutParams } from "./params";
+import { requestOptionsFor, type StripeAccountContext } from "./context";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { Party } from "@/lib/schemas/party";
 
@@ -11,6 +12,7 @@ type Result<T> = { data: T } | { error: string };
 // than surfacing a raw DB error.
 export async function ensureStripeCustomer(
   party: Pick<Party, "id" | "display_name" | "email" | "stripe_customer_id">,
+  ctx: StripeAccountContext,
 ): Promise<Result<{ id: string }>> {
   if (party.stripe_customer_id) return { data: { id: party.stripe_customer_id } };
 
@@ -19,11 +21,14 @@ export async function ensureStripeCustomer(
   const supabase = getSupabaseServer();
 
   try {
-    const customer = await stripe.customers.create({
-      name: party.display_name,
-      ...(party.email ? { email: party.email } : {}),
-      metadata: { party_id: party.id },
-    });
+    const customer = await stripe.customers.create(
+      {
+        name: party.display_name,
+        ...(party.email ? { email: party.email } : {}),
+        metadata: { party_id: party.id },
+      },
+      requestOptionsFor(ctx),
+    );
 
     const { error } = await supabase
       .from("parties")
@@ -53,11 +58,12 @@ export async function createSetupCheckoutSession(args: {
   party: Pick<Party, "id" | "display_name" | "email" | "stripe_customer_id">;
   appUrl: string;
   returnPath: string;
+  ctx: StripeAccountContext;
 }): Promise<Result<{ url: string }>> {
   const stripe = getStripe();
   if (!stripe) return { error: "Stripe is not configured." };
 
-  const customer = await ensureStripeCustomer(args.party);
+  const customer = await ensureStripeCustomer(args.party, args.ctx);
   if ("error" in customer) return customer;
 
   try {
@@ -68,6 +74,7 @@ export async function createSetupCheckoutSession(args: {
         appUrl: args.appUrl,
         returnPath: args.returnPath,
       }),
+      requestOptionsFor(args.ctx),
     );
     if (!session.url) return { error: "Stripe returned no setup URL." };
     return { data: { url: session.url } };
@@ -85,6 +92,7 @@ export async function createBillingPortalSession(args: {
   party: Pick<Party, "id" | "display_name" | "email" | "stripe_customer_id">;
   appUrl: string;
   returnPath: string;
+  ctx: StripeAccountContext;
 }): Promise<Result<{ url: string }>> {
   const stripe = getStripe();
   if (!stripe) return { error: "Stripe is not configured." };
@@ -93,10 +101,13 @@ export async function createBillingPortalSession(args: {
   }
 
   try {
-    const session = await stripe.billingPortal.sessions.create({
-      customer: args.party.stripe_customer_id,
-      return_url: `${args.appUrl}${args.returnPath}`,
-    });
+    const session = await stripe.billingPortal.sessions.create(
+      {
+        customer: args.party.stripe_customer_id,
+        return_url: `${args.appUrl}${args.returnPath}`,
+      },
+      requestOptionsFor(args.ctx),
+    );
     return { data: { url: session.url } };
   } catch (err) {
     return {

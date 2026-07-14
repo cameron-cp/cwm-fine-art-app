@@ -4,6 +4,7 @@ import {
   decideInvoiceState,
   settlementFromPaymentIntentStatus,
 } from "./reconcile";
+import { requestOptionsFor, type StripeAccountContext } from "./context";
 
 // Shared invoice-payment payload builder used by BOTH the webhook route and the
 // reconcileInvoicePayment server action, so the settlement-first decision has a
@@ -72,8 +73,14 @@ export async function buildInvoicePaymentPayload(
 export async function settlementFromSession(
   stripe: Stripe,
   sessionId: string,
+  ctx: StripeAccountContext,
 ): Promise<SettlementFacts | null> {
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const options = requestOptionsFor(ctx);
+  const session = await stripe.checkout.sessions.retrieve(
+    sessionId,
+    undefined,
+    options,
+  );
   const invoiceId = session.metadata?.invoice_id;
   if (!invoiceId || session.mode !== "payment") return null;
 
@@ -85,7 +92,7 @@ export async function settlementFromSession(
   let piStatus = "processing";
   let method: string | null = null;
   if (piId) {
-    const pi = await stripe.paymentIntents.retrieve(piId);
+    const pi = await stripe.paymentIntents.retrieve(piId, undefined, options);
     piStatus = pi.status;
     method = pi.payment_method_types?.[0] ?? null;
   }

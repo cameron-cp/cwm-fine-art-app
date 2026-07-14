@@ -7,6 +7,7 @@ import { invoiceSchema, type Invoice, type InvoiceInput } from "@/lib/schemas/in
 import { publicEnv } from "@/lib/env";
 import { getStripe } from "@/lib/stripe/client";
 import { createInvoiceCheckoutSession } from "@/lib/stripe/checkout";
+import { resolveStripeContext } from "@/lib/stripe/context";
 import {
   buildInvoicePaymentPayload,
   settlementFromSession,
@@ -298,6 +299,7 @@ export async function createInvoiceCheckout(
     invoice,
     stripeCustomerId,
     appUrl,
+    ctx: await resolveStripeContext(),
   });
   if ("error" in session) return { error: session.error };
 
@@ -342,7 +344,11 @@ export async function reconcileInvoicePayment(
 
   try {
     const service = getServiceClient();
-    const facts = await settlementFromSession(stripe, sessionId);
+    const facts = await settlementFromSession(
+      stripe,
+      sessionId,
+      await resolveStripeContext(),
+    );
     if (!facts) return { error: "Could not read the payment session from Stripe." };
     const payload = await buildInvoicePaymentPayload(service, facts);
     if (!payload) return { error: "Invoice not found." };

@@ -1,5 +1,6 @@
 import { getStripe } from "./client";
 import { buildInvoiceCheckoutParams } from "./params";
+import { requestOptionsFor, type StripeAccountContext } from "./context";
 import type { Invoice } from "@/lib/schemas/invoice";
 
 type Result<T> = { data: T } | { error: string };
@@ -21,6 +22,7 @@ export async function createInvoiceCheckoutSession(args: {
   invoice: InvoiceForCheckout;
   stripeCustomerId: string | null;
   appUrl: string;
+  ctx: StripeAccountContext;
 }): Promise<Result<{ id: string; url: string }>> {
   const stripe = getStripe();
   if (!stripe) return { error: "Stripe is not configured." };
@@ -42,6 +44,8 @@ export async function createInvoiceCheckoutSession(args: {
       // "Request payment" clicks mints a fresh session instead of a Stripe 400,
       // while true double-submits still collapse to one session.
       idempotencyKey: `invoice-checkout-${invoice.id}-${invoice.total_cents}-${invoice.updated_at}`,
+      // Account-context seam: {} on platform (V1), { stripeAccount } on Connect.
+      ...requestOptionsFor(args.ctx),
     });
     if (!session.url) return { error: "Stripe returned no checkout URL." };
     return { data: { id: session.id, url: session.url } };

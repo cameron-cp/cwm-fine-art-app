@@ -1,6 +1,7 @@
 import { getStripe } from "./client";
 import { buildRetainerCheckoutParams } from "./params";
 import { ensureStripeCustomer } from "./customers";
+import { requestOptionsFor, type StripeAccountContext } from "./context";
 import type { Party } from "@/lib/schemas/party";
 import type { Retainer, RetainerInterval } from "@/lib/schemas/stripe";
 
@@ -16,11 +17,12 @@ export async function createRetainerCheckoutSession(args: {
   billingInterval: RetainerInterval;
   description: string;
   appUrl: string;
+  ctx: StripeAccountContext;
 }): Promise<Result<{ id: string; url: string }>> {
   const stripe = getStripe();
   if (!stripe) return { error: "Stripe is not configured." };
 
-  const customer = await ensureStripeCustomer(args.party);
+  const customer = await ensureStripeCustomer(args.party, args.ctx);
   if ("error" in customer) return customer;
 
   try {
@@ -34,6 +36,7 @@ export async function createRetainerCheckoutSession(args: {
         description: args.description,
         appUrl: args.appUrl,
       }),
+      requestOptionsFor(args.ctx),
     );
     if (!session.url) return { error: "Stripe returned no checkout URL." };
     return { data: { id: session.id, url: session.url } };
@@ -49,6 +52,7 @@ export async function createRetainerCheckoutSession(args: {
 // local row canceled.
 export async function cancelRetainerSubscription(
   retainer: Pick<Retainer, "stripe_subscription_id">,
+  ctx: StripeAccountContext,
 ): Promise<Result<{ canceled: boolean }>> {
   if (!retainer.stripe_subscription_id) return { data: { canceled: false } };
 
@@ -56,7 +60,11 @@ export async function cancelRetainerSubscription(
   if (!stripe) return { error: "Stripe is not configured." };
 
   try {
-    await stripe.subscriptions.cancel(retainer.stripe_subscription_id);
+    await stripe.subscriptions.cancel(
+      retainer.stripe_subscription_id,
+      undefined,
+      requestOptionsFor(ctx),
+    );
     return { data: { canceled: true } };
   } catch (err) {
     return {
