@@ -72,16 +72,18 @@ export default async function RetainerDetailPage({
       <Card mb="4">
         <Flex direction="column" gap="1">
           <Text size="2">
-            Amount: {money(retainer.amount_cents)}
+            Amount: <span className="num">{money(retainer.amount_cents)}</span>
             {retainer.billing_interval
               ? ` · ${INTERVAL_LABEL[retainer.billing_interval]}`
               : ""}
           </Text>
           <Text size="2" color="gray">
             Next charge:{" "}
-            {retainer.current_period_end
-              ? retainer.current_period_end.slice(0, 10)
-              : "—"}
+            <span className="num">
+              {retainer.current_period_end
+                ? retainer.current_period_end.slice(0, 10)
+                : "—"}
+            </span>
           </Text>
         </Flex>
       </Card>
