@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { resolveFeatureModel } from "@/lib/ai/models";
 import {
   importDraftToolInputSchema,
   modelOutputSchema,
@@ -48,11 +47,10 @@ export async function extractArtworkFromPdf(
   apiKey: string,
 ): Promise<ModelOutput> {
   const client = new Anthropic({ apiKey });
-  const { model } = resolveFeatureModel("import");
   const base64 = Buffer.from(pdf).toString("base64");
 
   const response = await client.messages.create({
-    model,
+    model: "claude-opus-4-7",
     max_tokens: 4096,
     system: [
       {

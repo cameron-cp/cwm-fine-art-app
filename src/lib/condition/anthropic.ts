@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { resolveFeatureModel } from "@/lib/ai/models";
 import {
   conditionReportParseSchema,
   conditionReportToolInputSchema,
@@ -70,10 +69,9 @@ export async function extractConditionReport(
   apiKey: string,
 ): Promise<ConditionReportParse> {
   const client = new Anthropic({ apiKey });
-  const { model } = resolveFeatureModel("condition");
 
   const response = await client.messages.create({
-    model,
+    model: "claude-opus-4-8",
     max_tokens: 4096,
     system: [
       {
