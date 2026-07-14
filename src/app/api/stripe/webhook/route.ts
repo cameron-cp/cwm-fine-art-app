@@ -4,6 +4,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerEnv } from "@/lib/env";
 import { getStripe } from "@/lib/stripe/client";
 import { constructStripeEvent } from "@/lib/stripe/webhook";
+import {
+  requestOptionsFor,
+  type StripeAccountContext,
+} from "@/lib/stripe/context";
 import { decideRefund } from "@/lib/stripe/reconcile";
 import { buildInvoicePaymentPayload } from "@/lib/stripe/resolve";
 import {
@@ -31,7 +35,10 @@ async function resolvePayload(
   stripe: Stripe,
   service: SupabaseClient,
   event: Stripe.Event,
+  ctx: StripeAccountContext,
 ): Promise<Record<string, unknown> | null> {
+  // Every live Stripe read below acts within the account the event came from.
+  const options = requestOptionsFor(ctx);
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -43,7 +50,11 @@ async function resolvePayload(
         let piStatus = "processing";
         let method: string | null = null;
         if (piId) {
-          const pi = await stripe.paymentIntents.retrieve(piId);
+          const pi = await stripe.paymentIntents.retrieve(
+            piId,
+            undefined,
+            options,
+          );
           piStatus = pi.status;
           method = pi.payment_method_types?.[0] ?? null;
         }
@@ -62,9 +73,11 @@ async function resolvePayload(
         const subId = idOf(session.subscription);
         const facts = subId
           ? subscriptionFacts(
-              await stripe.subscriptions.retrieve(subId, {
-                expand: ["items.data.price"],
-              }),
+              await stripe.subscriptions.retrieve(
+                subId,
+                { expand: ["items.data.price"] },
+                options,
+              ),
             )
           : null;
         const m = session.metadata ?? {};
@@ -107,7 +120,7 @@ async function resolvePayload(
       const charge = event.data.object as Stripe.Charge;
       const piId = idOf(charge.payment_intent);
       if (!piId) return null;
-      const pi = await stripe.paymentIntents.retrieve(piId);
+      const pi = await stripe.paymentIntents.retrieve(piId, undefined, options);
       const invoiceId = pi.metadata?.invoice_id;
       if (!invoiceId) return null;
       const { fullyRefunded } = decideRefund({
@@ -190,10 +203,20 @@ export async function POST(req: Request) {
   }
   const event = verified.data;
 
+  // Account-context seam. On Connect, `event.account` is the connected account
+  // id (`acct_...`) the event originated from; on platform events it is absent.
+  // In V1 (single-tenant, platform-only) it is always null, so every live read
+  // below acts as the platform account — identical to today. When Connect
+  // webhooks arrive, this line already routes each event to its account with no
+  // other change to the handler.
+  const ctx: StripeAccountContext = {
+    stripeAccountId: event.account ?? null,
+  };
+
   let payload: Record<string, unknown> | null;
   try {
     const service = getServiceClient();
-    payload = await resolvePayload(stripe, service, event);
+    payload = await resolvePayload(stripe, service, event, ctx);
 
     if (payload) {
       const { error } = await service.rpc("apply_stripe_event", {
