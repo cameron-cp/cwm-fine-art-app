@@ -307,7 +307,7 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
 
         <Flex gap="3">
           <PartySelect control={control} setValue={setValue} name="on_behalf_of_party_id" label="On behalf of" parties={parties} />
-          <PartySelect control={control} setValue={setValue} name="seller_party_id" label="Seller (blank = you)" parties={parties} />
+          <PartySelect control={control} setValue={setValue} name="seller_party_id" label="Seller" noneLabel="You" parties={parties} />
         </Flex>
 
         <Separator size="4" />
@@ -466,12 +466,14 @@ function PartySelect({
   setValue,
   name,
   label,
+  noneLabel = "None",
   parties,
 }: {
   control: ReturnType<typeof useForm<InvoiceFormInput, unknown, InvoiceInput>>["control"];
   setValue: ReturnType<typeof useForm<InvoiceFormInput, unknown, InvoiceInput>>["setValue"];
   name: "on_behalf_of_party_id" | "seller_party_id";
   label: string;
+  noneLabel?: string;
   parties: PartyOption[];
 }) {
   return (
@@ -484,9 +486,9 @@ function PartySelect({
             value={(field.value as string | null) ?? NONE}
             onValueChange={(v) => setValue(name, v === NONE ? null : v)}
           >
-            <Select.Trigger placeholder="None" />
+            <Select.Trigger placeholder={noneLabel} />
             <Select.Content>
-              <Select.Item value={NONE}>None</Select.Item>
+              <Select.Item value={NONE}>{noneLabel}</Select.Item>
               {parties.map((p) => (
                 <Select.Item key={p.id} value={p.id}>
                   {p.display_name}
