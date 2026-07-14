@@ -1,0 +1,67 @@
+/* Museum wall label — PRINT voice (tearsheet + viewing-room PDF). Font-family is
+   inherited from the render page's serif environment; these rules set only the
+   size / weight / spacing so the label reads identically in both. Migrated
+   verbatim from the tearsheet's former .ts-artist/.ts-title/.ts-line/.ts-cr rules
+   so the tearsheet output is unchanged. */
+
+.mwl-artist {
+  font-weight: 700;
+  font-size: 14pt;
+  margin-bottom: 0.04in;
+  letter-spacing: 0.005em;
+}
+
+.mwl-byline {
+  font-size: 11pt;
+  color: #444;
+  margin-bottom: 0.06in;
+}
+
+.mwl-title {
+  font-size: 12pt;
+  margin-bottom: 0.04in;
+}
+
+.mwl-title em {
+  font-style: italic;
+}
+
+.mwl-line {
+  font-size: 12pt;
+  margin: 0;
+  padding: 0;
+}
+
+.mwl-cr {
+  font-size: 12pt;
+  margin-top: 0.2in;
+  font-style: italic;
+}
+
+/* Price + status are omitted by the tearsheet; the room PDF opts in. Price is the
+   mono catalogue voice; status is the semantic dot + uppercase word. */
+.mwl-price {
+  font-family: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5pt;
+  margin-top: 0.12in;
+}
+
+.mwl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 0.08in;
+  font-size: 9.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+}
+
+.mwl-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}

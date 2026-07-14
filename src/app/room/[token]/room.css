@@ -1,0 +1,205 @@
+/* Digital viewing room — the interface as exhibition wall. The plaster ground
+   recedes; the artwork is the only saturated thing on screen. Type does the work.
+   Reuses the app's design tokens (globals.css) since this route sits under the
+   root layout. One restrained page-load reveal; reduced-motion respected. */
+
+.vr-shell {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  padding: clamp(28px, 6vw, 72px) clamp(20px, 6vw, 96px) 96px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.vr-header {
+  margin-bottom: clamp(40px, 8vw, 96px);
+  animation: vr-reveal 0.7s ease both;
+}
+
+.vr-gallery {
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 20px;
+}
+
+.vr-title {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.vr-intro {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-size: clamp(16px, 2.2vw, 19px);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 60ch;
+  margin: 18px 0 0;
+}
+
+.vr-works {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(56px, 10vw, 120px);
+}
+
+.vr-work {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  animation: vr-reveal 0.7s ease both;
+}
+
+@media (min-width: 820px) {
+  .vr-work {
+    grid-template-columns: minmax(0, 1.7fr) minmax(220px, 0.9fr);
+    gap: clamp(32px, 5vw, 64px);
+    align-items: center;
+  }
+}
+
+/* Passe-partout mount: a mat inside a hairline frame — never a drop shadow. */
+.vr-frame {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: clamp(16px, 3vw, 40px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vr-image {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  display: block;
+}
+
+.vr-image-empty {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+
+/* Web museum-wall label. */
+.vr-artist {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.vr-byline {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.vr-worktitle {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-size: 19px;
+  color: var(--ink-2);
+  margin-top: 10px;
+}
+
+.vr-worktitle em {
+  font-style: italic;
+}
+
+.vr-spec {
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 12px;
+}
+
+.vr-caption {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 16px 0 0;
+  max-width: 44ch;
+}
+
+.vr-meta {
+  margin-top: 18px;
+}
+
+.vr-price {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.vr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Sold reads ink-muted (the palette rations chroma; status never borrows claret). */
+.vr-sold {
+  color: var(--ink-3);
+}
+
+.vr-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.vr-note,
+.vr-footer {
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.vr-footer {
+  margin-top: clamp(64px, 12vw, 140px);
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+@keyframes vr-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vr-header,
+  .vr-work {
+    animation: none;
+  }
+}

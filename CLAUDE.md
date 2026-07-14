@@ -64,6 +64,34 @@ editor. Interest tracking (0014) is no longer deferred — it is live via both
 the contacts editor and the chat. Conversation persistence, streaming, and
 interaction-capture rows remain deferred.
 
+### Digital viewing rooms — intentionally started (owner decision)
+
+Same authority as the Party model and Registrar chat: the **Digital Viewing Room**
+(migration `0017`, spec in [`docs/decisions/0008-viewing-rooms.md`](docs/decisions/0008-viewing-rooms.md))
+is an owner-approved expansion beyond the V1 gate. It is the app's **first
+logged-out public surface**: the dealer curates inventory works into a room, mints
+a **per-recipient opaque token** for a CRM contact, and the collector opens an
+on-brand room logged-out; `room_open` + `work_view` are captured against that named
+contact (client beacon, not server render). The dealer exports a multi-work PDF
+leave-behind (shared `museum-wall-label` component) and emails the invite via
+`sendEmail` — the rails' first real caller.
+
+Security posture (non-negotiable, see the ADR): middleware is slash-anchored
+(`/room/(.*)`, `/api/room/(.*)` — never `/room(.*)`, which would leak the dealer
+UI); the public route reads artwork fields ONLY from the `room_public_artworks`
+VIEW (structural whitelist — no notes/condition/cost/location, and `tracked` works
+barred by both the view and a DB trigger); revocation/expiry are re-checked on
+every event write; `noindex` + a per-token throttle. AI is **dealer-facing only**
+and not in M1.
+
+What shipped (M1): the `viewing_rooms` / `viewing_room_works` /
+`viewing_room_recipients` / `viewing_room_events` tables + the view, curation UI
+(`/rooms`), the public room (`/room/{token}`), the event endpoint, the PDF export,
+and the invite email. **Deferred:** fine-grained capture (dwell/zoom/image-open),
+the inquiry form + inquiry email (M1b), the engagement dashboard + "Read the room"
+AI intent read (M2), and AI-assisted curation (M3). `collector_interests.source`
+gained `'inferred_from_engagement'` for M2's future write-back.
+
 ## Stack
 
 **Core**

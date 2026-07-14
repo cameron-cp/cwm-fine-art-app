@@ -14,6 +14,9 @@ const serverSchema = z.object({
   // Separate from the tearsheet secret: the invoice render page exposes bank
   // ABA / account numbers, so a tearsheet-secret leak must not reach invoices.
   INVOICE_RENDER_SECRET: optionalSecret,
+  // Gates the viewing-room PDF leave-behind render page (/room/render/[id]).
+  // Separate secret from tearsheet/invoice so a leak is compartmentalized.
+  VIEWING_ROOM_RENDER_SECRET: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
   // Resend. Sending is guarded on RESEND_API_KEY being present, so the app
   // runs fine without it (mirrors BROWSERLESS_API_KEY). EMAIL_FROM must be a
@@ -55,6 +58,7 @@ export function getServerEnv() {
     BROWSERLESS_API_KEY: process.env.BROWSERLESS_API_KEY,
     TEARSHEET_RENDER_SECRET: process.env.TEARSHEET_RENDER_SECRET,
     INVOICE_RENDER_SECRET: process.env.INVOICE_RENDER_SECRET,
+    VIEWING_ROOM_RENDER_SECRET: process.env.VIEWING_ROOM_RENDER_SECRET,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
