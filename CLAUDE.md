@@ -46,9 +46,23 @@ remittance/T&C settings) so a re-print never changes. Money is exact integer cen
 allocation + insert + line items happen atomically in the `create_invoice` /
 `update_invoice` SECURITY DEFINER RPCs (execute revoked from anon).
 
-Still deferred: interest tracking, provenance chain, exhibitions, email flows,
+Still deferred: provenance chain, exhibitions, email flows,
 relationship-management UI, folding `artists` into `parties`, and the
 vault→parties seed import (buyers are typed as invoiced and accumulate).
+
+### The Registrar chat — intentionally started (owner decision)
+
+Follow-up exception, same authority as the Party model above: a conversational
+agent over the dealer's own records ("Ask", `/chat`), specced in
+[`docs/chat-agent.md`](docs/chat-agent.md). Migration `0016` adds
+`artworks.record_kind` (inventory vs tracked market works) and
+`artwork_ownerships` (structured title edges — location 0009 and text
+provenance are deliberately unchanged). The agent (`src/lib/chat/`) reads
+works/contacts/notes through the user-JWT client and has exactly one write:
+`log_collector_interest`, validated by the same `interestSchema` as the manual
+editor. Interest tracking (0014) is no longer deferred — it is live via both
+the contacts editor and the chat. Conversation persistence, streaming, and
+interaction-capture rows remain deferred.
 
 ## Stack
 

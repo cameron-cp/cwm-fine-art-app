@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 // Exhibition-signage nav: letterspaced uppercase micro-caps, ink-muted by default,
 // ink on hover, claret underline for the active section. See docs/design/design-system.md.
 const LINKS: { href: string; label: string }[] = [
+  { href: "/chat", label: "Ask" },
   { href: "/artists", label: "Artists" },
   { href: "/artworks", label: "Artworks" },
   { href: "/contacts", label: "Contacts" },
