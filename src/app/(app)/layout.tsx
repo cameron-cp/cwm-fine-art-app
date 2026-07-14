@@ -1,5 +1,5 @@
 import { UserButton } from "@clerk/nextjs";
-import { Box, Container, Flex } from "@radix-ui/themes";
+import { Box, Button, Container, Flex } from "@radix-ui/themes";
 import Link from "next/link";
 import { AppNav } from "./app-nav";
 
@@ -17,7 +17,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 >
                   Chloe Waddington <span className="font-semibold">Fine Art</span>
                 </Link>
-                <UserButton />
+                <Flex align="center" gap="5">
+                  <Button asChild variant="outline" size="1">
+                    <Link
+                      href="/chat"
+                      className="text-[11px] font-semibold uppercase tracking-[0.14em]"
+                    >
+                      Ask
+                    </Link>
+                  </Button>
+                  <Link
+                    href="/settings"
+                    className="border-b border-transparent pb-[2px] text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-3)] transition-colors hover:text-[var(--ink)]"
+                  >
+                    Settings
+                  </Link>
+                  <UserButton />
+                </Flex>
               </Flex>
               <AppNav />
             </Flex>
