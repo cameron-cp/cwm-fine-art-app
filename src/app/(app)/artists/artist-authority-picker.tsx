@@ -171,7 +171,7 @@ export function ArtistAuthorityPicker({ onResolved }: Props) {
         </Text>
       )}
       {resolve.isSuccess && resolve.data.getty !== "ok" && (
-        <Text size="1" color="amber" as="p" mt="1">
+        <Text size="1" as="p" mt="1" style={{ color: "var(--amber)" }}>
           {resolve.data.getty === "no_ulan"
             ? "No Getty ULAN record for this artist — using Wikidata only."
             : "Getty was unavailable — prefilled from Wikidata only. Re-run later to fill gaps."}
