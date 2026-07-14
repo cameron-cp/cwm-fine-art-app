@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { MuseumWallLabel } from "@/components/museum-wall-label";
 import { GALLERY_NAME } from "@/lib/brand";
 import { formatNationalities } from "@/lib/countries";
 import { formatDimensions } from "@/lib/dimensions";
@@ -103,21 +104,19 @@ export default async function TearsheetRenderPage({
       )}
 
       <section className="ts-meta">
-        <div className="ts-artist">{artist?.name ?? "Unknown artist"}</div>
-        {artistByline && <div className="ts-artist-byline">{artistByline}</div>}
-        <div className="ts-title">
-          <em>{artwork.title}</em>
-          {artwork.year ? <>, {artwork.year}</> : null}
-        </div>
-        {artwork.medium && <div className="ts-line">{artwork.medium}</div>}
-        {artwork.signature_details && (
-          <div className="ts-line">{artwork.signature_details}</div>
-        )}
-        {dimensions && <div className="ts-line">{dimensions}</div>}
-
-        {artwork.catalogue_raisonne && (
-          <p className="ts-paragraph ts-cr">{artwork.catalogue_raisonne}</p>
-        )}
+        {/* The shared museum-wall-label (design system's binding signature),
+            reused by the viewing-room PDF. Price/status intentionally omitted
+            here so the tearsheet output is unchanged. */}
+        <MuseumWallLabel
+          artistName={artist?.name ?? "Unknown artist"}
+          byline={artistByline}
+          title={artwork.title}
+          year={artwork.year}
+          medium={artwork.medium}
+          signatureDetails={artwork.signature_details}
+          dimensions={dimensions}
+          catalogueRaisonne={artwork.catalogue_raisonne}
+        />
       </section>
 
       {provenance.length > 0 && (

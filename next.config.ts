@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   outputFileTracingRoot: path.resolve(__dirname),
+  // Belt-and-suspenders noindex for the public collector surface (the room page
+  // also sets robots metadata). A viewing room is private per-recipient content
+  // and must never be indexed even if a token leaks into a crawler.
+  async headers() {
+    return [
+      {
+        source: "/room/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

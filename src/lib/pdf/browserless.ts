@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/env";
 
-// Shared Browserless render call. Both the tearsheet and invoice API routes hit
-// this — the POST body, env check, and error handling live in one place. Returns
-// a NextResponse: the PDF as an attachment on success, or a JSON error.
-export async function renderPdfViaBrowserless(opts: {
+// Core Browserless render call. Returns the PDF bytes or a typed error — no HTTP
+// coupling — so it can back both a download response (below) and an email
+// attachment (the viewing-room invite). The POST body, env check, and error
+// handling live here once, shared by tearsheet / invoice / room.
+export async function renderPdfBytesViaBrowserless(opts: {
   renderUrl: string; // full URL to the render page, including its ?token=
-  filename: string; // download filename
-}): Promise<NextResponse> {
+}): Promise<{ data: Uint8Array<ArrayBuffer> } | { error: string; status: number }> {
   const env = getServerEnv();
   if (!env.BROWSERLESS_API_KEY) {
-    return NextResponse.json(
-      { error: "BROWSERLESS_API_KEY is not configured" },
-      { status: 500 },
-    );
+    return { error: "BROWSERLESS_API_KEY is not configured", status: 500 };
   }
 
   const browserlessUrl = `https://production-sfo.browserless.io/pdf?token=${encodeURIComponent(
@@ -36,14 +33,24 @@ export async function renderPdfViaBrowserless(opts: {
 
   if (!blRes.ok) {
     const detail = await blRes.text().catch(() => "");
-    return NextResponse.json(
-      { error: `Browserless ${blRes.status}: ${detail.slice(0, 500)}` },
-      { status: 502 },
-    );
+    return { error: `Browserless ${blRes.status}: ${detail.slice(0, 500)}`, status: 502 };
   }
 
   const pdf = await blRes.arrayBuffer();
-  return new NextResponse(pdf, {
+  return { data: new Uint8Array(pdf) };
+}
+
+// Download wrapper. Both the tearsheet and invoice API routes hit this — returns a
+// NextResponse: the PDF as an attachment on success, or a JSON error.
+export async function renderPdfViaBrowserless(opts: {
+  renderUrl: string; // full URL to the render page, including its ?token=
+  filename: string; // download filename
+}): Promise<NextResponse> {
+  const res = await renderPdfBytesViaBrowserless({ renderUrl: opts.renderUrl });
+  if ("error" in res) {
+    return NextResponse.json({ error: res.error }, { status: res.status });
+  }
+  return new NextResponse(res.data, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${opts.filename}"`,

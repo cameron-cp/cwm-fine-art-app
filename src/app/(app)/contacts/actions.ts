@@ -167,6 +167,21 @@ export async function updateParty(
 
 export async function deleteParty(id: string): Promise<Result<{ id: string }>> {
   const supabase = getSupabaseServer();
+
+  // A viewing-room recipient's party_id FK is `on delete restrict` (0017): every
+  // recipient must stay attributable to a real contact. The raw FK error would be
+  // an ugly Postgres string, so pre-check and surface a friendly, actionable
+  // message instead — mirroring the addInterest / relationship-dup convention.
+  const { count } = await supabase
+    .from("viewing_room_recipients")
+    .select("id", { count: "exact", head: true })
+    .eq("party_id", id);
+  if (count && count > 0) {
+    return {
+      error: `Remove this contact from ${count} viewing room${count === 1 ? "" : "s"} first.`,
+    };
+  }
+
   const { error } = await supabase.from("parties").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/contacts");

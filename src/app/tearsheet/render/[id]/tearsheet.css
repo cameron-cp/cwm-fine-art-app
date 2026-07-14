@@ -81,27 +81,9 @@ html, body {
   margin-bottom: 0.25in;
 }
 
-.ts-artist {
-  font-weight: 700;
-  font-size: 14pt;
-  margin-bottom: 0.04in;
-  letter-spacing: 0.005em;
-}
-
-.ts-artist-byline {
-  font-size: 11pt;
-  color: #444;
-  margin-bottom: 0.06in;
-}
-
-.ts-title {
-  font-size: 12pt;
-  margin-bottom: 0.04in;
-}
-
-.ts-title em {
-  font-style: italic;
-}
+/* The artist / byline / title / catalogue-raisonné rules moved to the shared
+   museum-wall-label.css (rendered by <MuseumWallLabel>). .ts-line and
+   .ts-paragraph remain — still used by the provenance + literature sections. */
 
 .ts-line {
   font-size: 12pt;
@@ -112,11 +94,6 @@ html, body {
 .ts-paragraph {
   font-size: 12pt;
   margin: 0.14in 0;
-}
-
-.ts-cr {
-  margin-top: 0.2in;
-  font-style: italic;
 }
 
 .ts-section {

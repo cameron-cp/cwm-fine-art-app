@@ -1,0 +1,121 @@
+/* Viewing-room PDF leave-behind. Letter, serif body — the tearsheet's typographic
+   world, shared with the museum-wall-label. Cover page + one work per page. */
+
+@page {
+  size: Letter;
+  margin: 0.85in 0.85in 0.95in 0.85in;
+
+  @bottom-center {
+    content: counter(page) " of " counter(pages);
+    font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+    font-size: 9.5pt;
+    color: #555;
+    padding-bottom: 0.25in;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: white;
+  color: #111;
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Override the root Radix/Hanken so the document is fully serif (like tearsheet). */
+.rp-doc,
+.rp-doc * {
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+}
+
+/* But numbers/labels inside the shared label keep their intended faces. */
+.rp-doc .mwl-price {
+  font-family: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+.rp-doc .mwl-status {
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+}
+
+.rp-footer-src {
+  position: absolute;
+  left: -9999px;
+}
+
+.rp-cover {
+  min-height: 8in;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.rp-gallery {
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  font-size: 10pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6e6a60;
+  margin-bottom: 0.3in;
+}
+
+.rp-title {
+  font-weight: 500;
+  font-size: 30pt;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.rp-intro {
+  font-size: 13pt;
+  color: #45423b;
+  max-width: 6in;
+  margin: 0.25in 0 0;
+}
+
+.rp-work {
+  break-before: page;
+  break-inside: avoid;
+}
+
+.rp-image-wrap {
+  width: 100%;
+  margin-bottom: 0.3in;
+  display: flex;
+  justify-content: center;
+  break-inside: avoid;
+}
+
+.rp-image {
+  max-width: 100%;
+  max-height: 6in;
+  object-fit: contain;
+  display: block;
+}
+
+.rp-image-empty {
+  width: 100%;
+  height: 4in;
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5d5d5d;
+  font-size: 11pt;
+}
+
+.rp-caption {
+  font-style: italic;
+  font-size: 12pt;
+  color: #45423b;
+  margin: 0 0 0.18in;
+}
+
+.render-error {
+  padding: 24px;
+  font-family: var(--font-hanken), Helvetica, Arial, sans-serif;
+  color: #b00;
+}

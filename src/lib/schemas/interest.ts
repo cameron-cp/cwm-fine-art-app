@@ -46,6 +46,10 @@ export const interestSources = [
   "stated",
   "inferred_from_purchase",
   "inferred_from_conversation",
+  // Room engagement (viewing-room M2 intent read). Distinct from _conversation so
+  // the CRM audit trail stays honest about which AI write-path produced the row.
+  // Kept in lockstep with collector_interests_source_check (migration 0017).
+  "inferred_from_engagement",
   "other",
 ] as const;
 export const interestSource = z.enum(interestSources);
@@ -162,6 +166,7 @@ export const INTEREST_SOURCE_LABELS: Record<InterestSource, string> = {
   stated: "Stated",
   inferred_from_purchase: "Inferred from purchase",
   inferred_from_conversation: "Inferred from conversation",
+  inferred_from_engagement: "Inferred from engagement",
   other: "Other",
 };
 
