@@ -111,10 +111,10 @@ export default async function InvoiceDetailPage({
       </Table.Root>
 
       <Flex direction="column" gap="1" align="end">
-        <Text size="2">Subtotal: {money(invoice.subtotal_cents)}</Text>
-        <Text size="2">Shipping: {money(invoice.shipping_cents)}</Text>
+        <Text size="2">Subtotal: <span className="num">{money(invoice.subtotal_cents)}</span></Text>
+        <Text size="2">Shipping: <span className="num">{money(invoice.shipping_cents)}</span></Text>
         <Separator size="2" my="1" />
-        <Text size="4" weight="bold">Total due: {money(invoice.total_cents)}</Text>
+        <Text size="4" weight="bold">Total due: <span className="num">{money(invoice.total_cents)}</span></Text>
       </Flex>
     </Container>
   );
