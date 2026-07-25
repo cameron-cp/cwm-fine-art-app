@@ -160,6 +160,30 @@ used for status, emphasis, or decoration. Inline validation errors may also use
 
 ---
 
+## Overlays — the vitrine
+
+An overlay is a **vitrine**: a second plaster panel set on the same wall so she can
+finish a small piece of work without leaving the piece of work she's in. Use one only
+when leaving the current surface would destroy in-progress input (the inline
+create-artist path inside the artwork form is the canonical case). Anything that can be
+a page should stay a page.
+
+- Radix `Dialog` (`Dialog.Root` / `Trigger` / `Content`). Never `AlertDialog` for
+  creation flows — that primitive is for destructive confirmations.
+- The panel is `--paper` on a dimmed ground, square (radius 0 comes from the Theme), with
+  a `--rule` hairline border. **No shadow** — the hairline and the dim do the separating.
+- Title is serif (Radix `Dialog.Title` inherits `--heading-font-family`); an optional
+  `Dialog.Description` is one quiet grotesque line in `--ink-3`.
+- The overlay is its own surface for the one-primary-action rule: the panel's Save is a
+  solid claret button, and while it is open the underlying view's primary reads as
+  secondary. The trigger that opens the panel is therefore `outline`, never solid.
+- Long forms scroll **inside** the panel (`maxHeight: 85vh; overflow-y: auto`); the page
+  behind never scrolls with it.
+- Dismissal always leaves the host form exactly as it was — an overlay must never
+  navigate, remount, or discard the surface that opened it.
+
+---
+
 ## Conversation — the Registrar chat
 
 The chat view (`/chat`, docs/chat-agent.md) is a **transcript, not a messenger**: no

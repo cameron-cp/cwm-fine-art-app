@@ -21,11 +21,18 @@ import { createArtist, deleteArtist, generateArtistBio, updateArtist } from "./a
 
 const COUNTRY_CODE_SET = new Set<string>(COUNTRY_CODES);
 
-type Props = { artist?: Artist };
+type Props = {
+  artist?: Artist;
+  // Inline mode (the artwork form's create-artist overlay): hand the new artist
+  // back to the host instead of navigating to /artists, and let the host close
+  // itself on cancel. Same fields, same schema, same server action.
+  onCreated?: (artist: { id: string; name: string }) => void;
+  onCancel?: () => void;
+};
 
 const ADD_PLACEHOLDER = "__add__";
 
-export function ArtistForm({ artist }: Props) {
+export function ArtistForm({ artist, onCreated, onCancel }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +82,10 @@ export function ArtistForm({ artist }: Props) {
       const result = artist ? await updateArtist(artist.id, values) : await createArtist(values);
       if ("error" in result) {
         setError(result.error);
+        return;
+      }
+      if (onCreated && !artist) {
+        onCreated({ id: result.data.id, name: values.name });
         return;
       }
       router.push("/artists");
@@ -283,7 +294,12 @@ export function ArtistForm({ artist }: Props) {
             <Button type="submit" loading={pending}>
               {artist ? "Save changes" : "Create artist"}
             </Button>
-            <Button type="button" variant="soft" color="gray" onClick={() => router.back()}>
+            <Button
+              type="button"
+              variant="soft"
+              color="gray"
+              onClick={() => (onCancel ? onCancel() : router.back())}
+            >
               Cancel
             </Button>
           </Flex>

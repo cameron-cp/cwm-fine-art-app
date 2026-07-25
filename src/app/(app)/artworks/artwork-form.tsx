@@ -13,7 +13,7 @@ import {
 import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useState, useTransition } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import {
   ARTWORK_STATUS_META,
@@ -25,13 +25,16 @@ import {
 } from "@/lib/schemas/artwork";
 import { useSupabase } from "@/lib/supabase/browser";
 import {
+  ArtistPicker,
+  mergeArtistOptions,
+  type ArtistOption,
+} from "./artist-picker";
+import {
   createArtwork,
   deleteArtwork,
   recordArtworkImage,
   updateArtwork,
 } from "./actions";
-
-type ArtistOption = { id: string; name: string };
 
 // A place an artwork can sit: one party_addresses row, labelled by its owning party.
 export type AddressOption = {
@@ -110,6 +113,15 @@ export function ArtworkForm(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const mediumListId = useId();
+
+  // Artists created from inside this form (the vitrine overlay on the Artist
+  // field). Kept alongside the server-rendered list rather than replacing it, so
+  // the import flow — which owns and grows its own `artists` prop — still works.
+  const [createdArtists, setCreatedArtists] = useState<ArtistOption[]>([]);
+  const artistOptions = useMemo(
+    () => mergeArtistOptions(artists, createdArtists),
+    [artists, createdArtists],
+  );
 
   // Edit: prefill from artwork. Import: prefill from initialValues, never
   // fall back to artists[0] for artist_id (we want the user to choose, or
@@ -280,19 +292,18 @@ export function ArtworkForm(props: Props) {
             control={control}
             name="artist_id"
             render={({ field }) => (
-              <Select.Root
-                value={field.value || undefined}
-                onValueChange={field.onChange}
-              >
-                <Select.Trigger placeholder="Select artist…" />
-                <Select.Content>
-                  {artists.map((a) => (
-                    <Select.Item key={a.id} value={a.id}>
-                      {a.name}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
+              <ArtistPicker
+                artists={artistOptions}
+                value={(field.value as string | undefined) ?? ""}
+                onChange={field.onChange}
+                onCreated={(artist) => {
+                  setCreatedArtists((prev) => [...prev, artist]);
+                  setValue("artist_id", artist.id, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
             )}
           />
         </Field>
