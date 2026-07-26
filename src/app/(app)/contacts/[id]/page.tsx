@@ -3,8 +3,23 @@ import { notFound } from "next/navigation";
 import { ContactForm } from "../contact-form";
 import { ContactRelationships } from "../contact-relationships";
 import { ContactPaymentMethods } from "@/components/contact-payment-methods";
+import {
+  ArtworkLinksEditor,
+  type ArtworkLinkView,
+} from "@/components/artwork-links-editor";
 import { InterestsEditor } from "@/components/interests-editor";
+import {
+  artworkOptionLabels,
+  CONTACT_ARTWORK_LINKS_SELECT,
+  flattenArtworkPartyRows,
+  type RawArtworkPartyRow,
+} from "@/lib/artwork-parties/queries";
+import {
+  sortArtworkParties,
+  summarizeArtworkParties,
+} from "@/lib/artwork-parties/summarize";
 import { summarizeInterests } from "@/lib/interests/summarize";
+import { type ArtworkPartyRow } from "@/lib/schemas/artwork-party";
 import { type InterestRow } from "@/lib/schemas/interest";
 import {
   type Party,
@@ -13,6 +28,7 @@ import {
   type PartyRole,
 } from "@/lib/schemas/party";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { signedArtworkUrls } from "@/lib/supabase/storage";
 
 export default async function ContactDetailPage({
   params,
@@ -37,6 +53,8 @@ export default async function ContactDetailPage({
     { data: interestRows },
     { data: artistRows },
     { data: mediumRows },
+    { data: linkRows },
+    { data: artworkPickerRows },
   ] = await Promise.all([
       supabase.from("party_roles").select("role").eq("party_id", id),
       supabase
@@ -66,6 +84,16 @@ export default async function ContactDetailPage({
         .order("created_at", { ascending: false }),
       supabase.from("artists").select("id, name").order("name"),
       supabase.from("artworks").select("medium").not("medium", "is", null),
+      // Every link, not just current ownership — the list shows advisor/gallery
+      // roles and closed intervals too, ordered client-side by sortArtworkParties.
+      supabase
+        .from("artwork_parties")
+        .select(CONTACT_ARTWORK_LINKS_SELECT)
+        .eq("party_id", id),
+      supabase
+        .from("artworks")
+        .select("id, title, year, artist:artists(name)")
+        .order("created_at", { ascending: false }),
     ]);
 
   const roles = (roleRows ?? []).map((r) => r.role as PartyRole);
@@ -88,6 +116,27 @@ export default async function ContactDetailPage({
         .filter((m): m is string => Boolean(m && m.trim())),
     ),
   ).sort((a, b) => a.localeCompare(b));
+
+  // Flatten the embedded artist join, then sign every thumbnail in one round trip.
+  const artworkLinks: ArtworkPartyRow[] = flattenArtworkPartyRows(
+    (linkRows ?? []) as unknown as RawArtworkPartyRow[],
+  );
+
+  const linkPaths = artworkLinks
+    .map((l) => l.artwork?.primary_image_path)
+    .filter((p): p is string => !!p);
+  const signedLinkUrls = await signedArtworkUrls(supabase, linkPaths, 3600);
+
+  const artworkLinkViews: ArtworkLinkView[] = sortArtworkParties(artworkLinks).map((l) => ({
+    ...l,
+    imageUrl: l.artwork?.primary_image_path
+      ? (signedLinkUrls[l.artwork.primary_image_path] ?? null)
+      : null,
+  }));
+  const artworkLinksSummary = summarizeArtworkParties(artworkLinks);
+  const artworkOptions = artworkOptionLabels(
+    (artworkPickerRows ?? []) as unknown as Parameters<typeof artworkOptionLabels>[0],
+  );
 
   const { website_url, linkedin_url } = party as Party;
 
@@ -117,16 +166,29 @@ export default async function ContactDetailPage({
 
       <ContactForm party={party as Party} roles={roles} addresses={partyAddresses} />
 
-      <ContactPaymentMethods
-        id={id}
-        hasCustomer={Boolean((party as Party).stripe_customer_id)}
-      />
+      {/* An unidentified holder (0022) has nobody to charge, and the DB CHECK bars
+          it from holding a Stripe customer — so don't offer the panel at all. */}
+      {!(party as Party).is_unidentified && (
+        <ContactPaymentMethods
+          id={id}
+          hasCustomer={Boolean((party as Party).stripe_customer_id)}
+        />
+      )}
 
       <ContactRelationships
         contactId={id}
         contactName={(party as Party).display_name}
         relationships={relationships}
         parties={parties}
+      />
+
+      {/* What they hold comes before what they want. */}
+      <ArtworkLinksEditor
+        partyId={id}
+        contactName={(party as Party).display_name}
+        links={artworkLinkViews}
+        summary={artworkLinksSummary}
+        artworkOptions={artworkOptions}
       />
 
       <InterestsEditor

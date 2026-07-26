@@ -45,6 +45,20 @@ runs on provenance.
 Provenance stays as display text on tearsheets; ownerships are the queryable
 layer. Folding text provenance into edges is future work, not this slice.
 
+**Superseded by 0019.** `artwork_ownerships` is now **`artwork_parties`**, with a
+`role` column — she attaches a contact to a work as its `owner` (the primary
+case) but also as `consignor`, `advisor`, `gallery`, `agent`, `custodian`,
+`conservator`, `lender`, or `other`. Everything above still holds for the title
+edge; the open-link uniqueness rule is now per `(artwork, party, role)`.
+
+`role = 'owner'` is the ONLY thing that means title. Every owner projection
+filters on it — `search_artworks.current_owners`, `get_artwork.ownership_history`,
+and `get_party.currently_owns`. Non-title edges ship as their own keys
+(`get_artwork.other_parties`, `get_party.other_work_links`) so the model states
+the role it was given instead of blurring an advisor into an owner. The rename
+was deliberate: it makes an un-patched read fail loudly rather than silently
+report the wrong thing.
+
 ## Architecture
 
 ```

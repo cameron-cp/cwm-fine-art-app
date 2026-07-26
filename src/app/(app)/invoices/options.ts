@@ -1,4 +1,5 @@
 import { formatDimensions } from "@/lib/dimensions";
+import { onlyContactableParties } from "@/lib/parties/contactable";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { ArtworkOption, PartyOption } from "./invoice-form";
 
@@ -15,12 +16,14 @@ export async function getInvoiceFormOptions(): Promise<{
         "id, title, year, medium, edition, signature_details, catalogue_raisonne, provenance_lines, price_cents, currency, height_in, width_in, depth_in, artists(name)",
       )
       .order("title"),
-    supabase
-      .from("parties")
-      .select(
-        "id, display_name, legal_name, email, party_addresses(id, label, line1, line2, city, region, postal_code, country_code, is_primary, position)",
-      )
-      .order("display_name"),
+    // An unidentified holder (0022) has no real bill-to; never offer it as a buyer.
+    onlyContactableParties(
+      supabase
+        .from("parties")
+        .select(
+          "id, display_name, legal_name, email, party_addresses(id, label, line1, line2, city, region, postal_code, country_code, is_primary, position)",
+        ),
+    ).order("display_name"),
   ]);
 
   const artworkOptions: ArtworkOption[] = (artworks ?? []).map((a) => {

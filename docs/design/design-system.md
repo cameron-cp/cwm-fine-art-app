@@ -124,6 +124,14 @@ drop shadow — depth from a mat and a rule.
   claret ring. Uppercase letterspaced label above.
 - **Status tags** — a dot + an uppercase word (sage/amber/ink-muted). **No filled candy
   pills** — those read as software.
+- **Meta tags** — hairline outline box, `10px` uppercase, `.12em` tracking, `--ink-2`, on
+  `--rule-2`. For a record's own vocabulary (a contact's roles, an artwork-party role, an
+  interest dimension), not its state — status keeps the dot idiom above. Never filled,
+  never the accent.
+  A **dashed** border + `--ink-3` is the one variant: it marks a value the dealer knows is
+  provisional or standing in for something she can't supply yet (an unidentified holder).
+  Dashed reads as "outline not yet inked" — the same reason nothing else on the wall is
+  dashed. Don't spend it on ordinary emphasis.
 - **Tables (the "ledger")** — hairline row rules, uppercase letterspaced headers, serif
   artist + italic title in the first cell, right-aligned tabular mono for price/year.
   Row hover → `--paper-2`. Wrap in `overflow-x:auto`.

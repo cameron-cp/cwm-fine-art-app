@@ -57,12 +57,50 @@ agent over the dealer's own records ("Ask", `/chat`), specced in
 [`docs/chat-agent.md`](docs/chat-agent.md). Migration `0016` adds
 `artworks.record_kind` (inventory vs tracked market works) and
 `artwork_ownerships` (structured title edges — location 0009 and text
-provenance are deliberately unchanged). The agent (`src/lib/chat/`) reads
+provenance are deliberately unchanged; renamed to `artwork_parties` by 0019,
+see below). The agent (`src/lib/chat/`) reads
 works/contacts/notes through the user-JWT client and has exactly one write:
 `log_collector_interest`, validated by the same `interestSchema` as the manual
 editor. Interest tracking (0014) is no longer deferred — it is live via both
 the contacts editor and the chat. Conversation persistence, streaming, and
 interaction-capture rows remain deferred.
+
+### Artwork ↔ contact roles (owner decision)
+
+Migration `0019` renames `artwork_ownerships` to **`artwork_parties`** and adds a
+`role`. The dealer attaches a contact to a work as its **`owner`** — the primary
+case, and the default — or as `consignor`, `advisor`, `gallery`, `agent`,
+`custodian`, `conservator`, `lender`, `other`. Same edge shape as before
+(open interval + `source` + `confidence`); the open-link unique index is now per
+`(artwork, party, role)`, so joint ownership still works and one party can be
+both owner and advisor on a work.
+
+**`role = 'owner'` is the only thing that means title.** Every owner projection
+filters on it (`TITLE_ROLE` in `src/lib/schemas/artwork-party.ts`, and
+`isCurrentOwner` in `src/lib/artwork-parties/summarize.ts`); non-title edges are
+reported under their own keys so an advisor is never read as an owner. The table
+was renamed rather than extended in place precisely so any un-patched read fails
+loudly instead of quietly returning the wrong parties.
+
+Surfaced on the contact page (`Works`) as a ledger of line items — thumbnail plus
+wall label, each linking to `/artworks/{id}` — ordered current holdings, then
+other current roles, then closed links. Write surface is add/delete only, matching
+the interests editor; a correction is delete + re-add, and history is recordable
+at insert time via the two date fields. **Deferred:** the reciprocal editor on the
+artwork page (parties are read-only there for now) and a dedicated "mark as sold /
+close the interval" action.
+
+**Unidentified holders.** Migration `0022` adds `parties.is_unidentified` for the
+holder she knows exists but cannot name — "private collectors in Palm Beach", per
+the advisor. It is a real party row so `role='owner'` has something to point at and
+so renaming it later fixes every edge at once; see
+[`docs/decisions/0011-unidentified-parties.md`](docs/decisions/0011-unidentified-parties.md)
+for the rejected alternatives. The flag is load-bearing: every picker that selects
+a party for an **outward action** (invoice buyer, viewing-room recipient, retainer
+subscriber) filters through `onlyContactableParties`
+(`src/lib/parties/contactable.ts`), and a DB CHECK bars these rows from holding a
+Stripe customer. Internal graph surfaces — Contacts, the relationship picker, the
+chat's party search — deliberately still show them.
 
 ### Digital viewing rooms — intentionally started (owner decision)
 

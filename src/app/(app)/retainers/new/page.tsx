@@ -1,13 +1,15 @@
 import { Container, Heading, Text } from "@radix-ui/themes";
 import { RetainerForm } from "../retainer-form";
+import { onlyContactableParties } from "@/lib/parties/contactable";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export default async function NewRetainerPage() {
   const supabase = getSupabaseServer();
-  const { data } = await supabase
-    .from("parties")
-    .select("id, display_name, email")
-    .order("display_name");
+  // A retainer charges a saved card, which an unidentified holder (0022) can
+  // never have — the DB CHECK bars it. Keep it out of the picker too.
+  const { data } = await onlyContactableParties(
+    supabase.from("parties").select("id, display_name, email"),
+  ).order("display_name");
   const parties = (data ?? []) as {
     id: string;
     display_name: string;

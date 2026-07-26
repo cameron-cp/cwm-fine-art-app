@@ -29,6 +29,7 @@ function partyColumns(data: ParsedParty) {
     website_url: data.website_url,
     linkedin_url: data.linkedin_url,
     notes: data.notes,
+    is_unidentified: data.is_unidentified,
   };
 }
 
@@ -139,6 +140,24 @@ export async function updateParty(
   }
 
   const supabase = getSupabaseServer();
+
+  // parties_unidentified_no_stripe_customer (0022) rejects flagging a contact
+  // that already has payment rails. Pre-check so she gets an actionable sentence
+  // instead of a raw CHECK-violation string (deleteParty convention, below).
+  if (parsed.data.is_unidentified) {
+    const { data: existing } = await supabase
+      .from("parties")
+      .select("stripe_customer_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (existing?.stripe_customer_id) {
+      return {
+        error:
+          "This contact has a saved payment method, so it can't be marked unidentified. Remove the card/bank on file first.",
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("parties")
     .update(partyColumns(parsed.data))

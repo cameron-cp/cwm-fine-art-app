@@ -6,6 +6,7 @@ import { RoomExportButton } from "./room-export-button";
 import { WorksPanel, type AvailableWork, type RoomWorkItem } from "./works-panel";
 import { RoomForm } from "../room-form";
 import { publicEnv } from "@/lib/env";
+import { onlyContactableParties } from "@/lib/parties/contactable";
 import type { RoomRow } from "@/lib/schemas/viewing-room";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { signedArtworkUrls } from "@/lib/supabase/storage";
@@ -47,10 +48,12 @@ export default async function RoomDetailPage({
         .select("id, title, primary_image_path, artists(name)")
         .eq("record_kind", "inventory")
         .order("created_at", { ascending: false }),
-      supabase
-        .from("parties")
-        .select("id, display_name, email")
-        .order("display_name", { ascending: true }),
+      // Room events are captured against a NAMED contact and the invite is a real
+      // email — an unidentified holder (0022) can be neither. Same intent as the
+      // record_kind filter on the works query above.
+      onlyContactableParties(
+        supabase.from("parties").select("id, display_name, email"),
+      ).order("display_name", { ascending: true }),
     ]);
 
   // Normalize the embedded joins (PostgREST returns object|array depending on rel).
