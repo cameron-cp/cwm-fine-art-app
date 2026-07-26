@@ -4,7 +4,7 @@ import Link from "next/link";
 import { StatusBadge } from "./status-badge";
 import { ClearFilters, FilterSelect, SearchInput } from "@/components/list-controls";
 import { firstParam, sanitizeSearch } from "@/lib/search";
-import { artworkStatus, type Artwork } from "@/lib/schemas/artwork";
+import { ARTWORK_STATUS_META, artworkStatus, type Artwork } from "@/lib/schemas/artwork";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { formatPriceCents, signedArtworkUrls } from "@/lib/supabase/storage";
 
@@ -17,12 +17,6 @@ type Row = Pick<
 > & {
   artists: { name: string } | null;
   current_party_address: AddressRef | AddressRef[] | null;
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  available: "Available",
-  on_hold: "On hold",
-  sold: "Sold",
 };
 
 // "Party — label" for the current location, or "—". Tolerates the untyped embed
@@ -118,7 +112,10 @@ export default async function ArtworksPage({
           paramKey="status"
           label="Status"
           allLabel="All statuses"
-          options={artworkStatus.options.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
+          options={artworkStatus.options.map((s) => ({
+            value: s,
+            label: ARTWORK_STATUS_META[s].label,
+          }))}
         />
         <FilterSelect
           paramKey="artist"

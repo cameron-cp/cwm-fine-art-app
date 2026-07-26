@@ -16,8 +16,27 @@ const optionalInches = z.preprocess(
   z.number().min(0).max(10000).nullable(),
 );
 
-export const artworkStatus = z.enum(["available", "on_hold", "sold"]);
+// Order matches the postgres enum (0001 + 0020) and drives the list filter's
+// option order. 'not_for_sale' = placed/known but not on offer, e.g. in a private
+// collection — not a recorded sale.
+export const artworkStatus = z.enum(["available", "on_hold", "sold", "not_for_sale"]);
 export type ArtworkStatus = z.infer<typeof artworkStatus>;
+
+// Label + status tone for every place a status is shown — the list badge, the
+// artwork form's select, the list filter, and the viewing-room wall label. Kept
+// beside the enum (same pattern as INVOICE_PAYMENT_STATUS_META in ./stripe) so a
+// new status is one edit here plus the enum migration. The tone union is written
+// out rather than imported so this schema module stays free of component imports;
+// it matches StatusTone and WallLabelStatus["tone"].
+export const ARTWORK_STATUS_META: Record<
+  ArtworkStatus,
+  { label: string; tone: "positive" | "warning" | "muted" }
+> = {
+  available: { label: "Available", tone: "positive" },
+  on_hold: { label: "On hold", tone: "warning" },
+  sold: { label: "Sold", tone: "muted" },
+  not_for_sale: { label: "Not for sale", tone: "muted" },
+};
 
 // Provenance line items as objects in the form (useFieldArray requires objects);
 // flattened to string[] before persisting.

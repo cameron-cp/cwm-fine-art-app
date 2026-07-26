@@ -73,7 +73,7 @@ export const REGISTRAR_TOOLS = [
         year_from: { type: "integer", description: "Earliest year, inclusive. For '1960s' use 1960." },
         year_to: { type: "integer", description: "Latest year, inclusive. For '1960s' use 1969." },
         medium: { type: "string", description: "Medium substring, e.g. 'oil' or 'paper'." },
-        status: { type: "string", enum: ["available", "on_hold", "sold"] },
+        status: { type: "string", enum: ["available", "on_hold", "sold", "not_for_sale"] },
         record_kind: {
           type: "string",
           enum: ["inventory", "tracked"],

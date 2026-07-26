@@ -156,8 +156,9 @@
   text-transform: uppercase;
 }
 
-/* Sold reads ink-muted (the palette rations chroma; status never borrows claret). */
-.vr-sold {
+/* Sold / not-for-sale read ink-muted (the palette rations chroma; status never
+   borrows claret). */
+.vr-offmarket {
   color: var(--ink-3);
 }
 

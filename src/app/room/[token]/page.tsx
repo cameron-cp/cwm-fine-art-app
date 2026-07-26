@@ -5,6 +5,7 @@ import { GALLERY_NAME } from "@/lib/brand";
 import { checkRecipientToken } from "@/lib/rooms/token";
 import { throttleToken } from "@/lib/rooms/throttle";
 import { loadRoomWorks, resolveRecipient, resolveRoomPrice, type RoomWorkView } from "@/lib/rooms/public";
+import { ARTWORK_STATUS_META, type ArtworkStatus } from "@/lib/schemas/artwork";
 import type { RoomRow } from "@/lib/schemas/viewing-room";
 import { getRenderServiceClient } from "@/lib/supabase/render-client";
 import { formatPriceCents } from "@/lib/supabase/storage";
@@ -85,7 +86,9 @@ function Work({
   work: RoomWorkView;
   priceVisibility: RoomRow["price_visibility"];
 }) {
-  const isSold = work.status === "sold";
+  // A work that isn't on offer shows its status word where the price would go —
+  // never a number the collector can't act on.
+  const offMarket = work.status === "sold" || work.status === "not_for_sale";
   const price = resolveRoomPrice(
     priceVisibility,
     formatPriceCents(work.price_cents, work.currency),
@@ -114,10 +117,10 @@ function Work({
         {specLine && <div className="vr-spec">{specLine}</div>}
         {work.caption && <p className="vr-caption">{work.caption}</p>}
         <div className="vr-meta">
-          {isSold ? (
-            <span className="vr-status vr-sold">
+          {offMarket ? (
+            <span className="vr-status vr-offmarket">
               <span className="vr-dot" />
-              Sold
+              {ARTWORK_STATUS_META[work.status as ArtworkStatus].label}
             </span>
           ) : (
             price && <span className="vr-price num">{price}</span>

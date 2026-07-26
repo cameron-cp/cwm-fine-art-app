@@ -142,7 +142,7 @@ artworks
   condition text null
   price_cents int null
   currency text default 'USD'
-  status text                -- 'available' | 'on_hold' | 'sold'
+  status text                -- 'available' | 'on_hold' | 'sold' | 'not_for_sale'
   notes text null
   primary_image_path text null  -- Supabase Storage path
   created_at, updated_at
