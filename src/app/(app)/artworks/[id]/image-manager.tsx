@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Flex, IconButton, Text } from "@radix-ui/themes";
+import { Box, Button, Flex, Heading, IconButton, Text } from "@radix-ui/themes";
 import Image from "next/image";
 import { Alert } from "@/components/alert";
 import { StatusTag } from "@/components/status-tag";
@@ -92,12 +92,12 @@ export function ImageManager({ artworkId, images, primaryPath }: Props) {
   return (
     <Box>
       <Flex justify="between" align="center" mb="3">
-        <Text size="3" weight="medium">
+        <Heading size="4">
           Images{" "}
           <Text size="2" color="gray" weight="regular">
             ({images.length})
           </Text>
-        </Text>
+        </Heading>
         <Button
           size="2"
           variant="soft"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Flex, Text } from "@radix-ui/themes";
+import { Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { Alert } from "@/components/alert";
 import { useState, useTransition } from "react";
 import {
@@ -37,7 +37,7 @@ export function ContactPaymentMethods({
     <Card mt="5">
       <Flex direction="column" gap="3">
         <div>
-          <Text weight="bold">Payment methods</Text>
+          <Heading size="4">Payment methods</Heading>
           <Text as="p" size="2" color="gray">
             Save a card or US bank account on file (Stripe-hosted — no card data
             touches this app).
