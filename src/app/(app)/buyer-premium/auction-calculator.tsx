@@ -126,7 +126,7 @@ export function AuctionCalculator() {
           </SegmentedControl.Root>
           {house.effectiveDate && (
             <Text size="1" color="gray">
-              Rate card effective {house.effectiveDate}
+              Rate card effective <span className="num">{house.effectiveDate}</span>
             </Text>
           )}
         </Flex>
@@ -247,14 +247,16 @@ export function AuctionCalculator() {
                 </Table.Cell>
                 <Table.Cell align="right">
                   {hammer > 0 && showFee ? (
-                    <Text>{formatCurrency(fee, location.currency)}</Text>
+                    <Text className="num">{formatCurrency(fee, location.currency)}</Text>
                   ) : (
                     <Text color="gray">—</Text>
                   )}
                 </Table.Cell>
                 <Table.Cell align="right">
                   {hammer > 0 && showFee ? (
-                    <Text weight="medium">{formatCurrency(hammer + fee, location.currency)}</Text>
+                    <Text weight="medium" className="num">
+                      {formatCurrency(hammer + fee, location.currency)}
+                    </Text>
                   ) : (
                     <Text color="gray">—</Text>
                   )}
@@ -345,6 +347,7 @@ function SummaryRow({
         size={emphasis ? "5" : "3"}
         weight={emphasis ? "bold" : "medium"}
         color={muted ? "gray" : undefined}
+        className="num"
       >
         {value}
       </Text>
