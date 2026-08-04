@@ -44,6 +44,54 @@ function readLocalEnv(): LocalEnv {
 const local = readLocalEnv();
 const d = local ? describe : describe.skip;
 
+// Everything here reads files or calls Zod, so it must NOT sit behind the local
+// stack gate below. The three picker assertions are the regression guard for the
+// billable/emailable surfaces; gated, they were skipped in every environment that
+// has no local Supabase — which is all of them, since the remote DB is the only
+// one — and a picker could have dropped its filter with nothing failing.
+describe("parties.is_unidentified (no database)", () => {
+  // partySchema's optionalText fields require the key to be PRESENT (null is fine,
+  // undefined is not), which is what the form always submits — so a realistic
+  // payload, not a bare object.
+  function formPayload(over: Record<string, unknown> = {}) {
+    return {
+      display_name: "Someone",
+      legal_name: null,
+      email: null,
+      phone: null,
+      website_url: null,
+      linkedin_url: null,
+      notes: null,
+      ...over,
+    };
+  }
+
+  it("carries the flag through Zod with the same false default as the DB", () => {
+    // Omitting the key entirely must yield false, or an existing contact edited
+    // through an older form payload would silently become unidentified.
+    expect(partySchema.parse(formPayload()).is_unidentified).toBe(false);
+    expect(
+      partySchema.parse(formPayload({ is_unidentified: true })).is_unidentified,
+    ).toBe(true);
+  });
+
+  // The three pickers that select a party for an action with a real-world
+  // consequence — bill, email, charge. A new picker of that kind belongs in this
+  // list. Reading the source is the only way to assert the call site exists: these
+  // are server components needing a Clerk-authed client, so they can't be invoked
+  // from vitest.
+  it.each([
+    ["invoice buyer", "src/app/(app)/invoices/options.ts"],
+    ["viewing-room recipient", "src/app/(app)/rooms/[id]/page.tsx"],
+    ["retainer subscriber", "src/app/(app)/retainers/new/page.tsx"],
+  ])("the %s picker routes its party query through the filter", (_label, file) => {
+    const src = readFileSync(resolve(process.cwd(), file), "utf8");
+    expect(src).toContain("onlyContactableParties(");
+    // No second, unfiltered read of parties hiding in the same file.
+    expect(src.match(/\.from\("parties"\)/g)).toHaveLength(1);
+  });
+});
+
 d("parties.is_unidentified (local Supabase)", () => {
   let service: SupabaseClient;
   let namedId: string;
@@ -116,31 +164,6 @@ d("parties.is_unidentified (local Supabase)", () => {
     expect(data!.is_unidentified).toBe(false);
   });
 
-  // partySchema's optionalText fields require the key to be PRESENT (null is fine,
-  // undefined is not), which is what the form always submits — so a realistic
-  // payload, not a bare object.
-  function formPayload(over: Record<string, unknown> = {}) {
-    return {
-      display_name: "Someone",
-      legal_name: null,
-      email: null,
-      phone: null,
-      website_url: null,
-      linkedin_url: null,
-      notes: null,
-      ...over,
-    };
-  }
-
-  it("carries the flag through Zod with the same false default as the DB", () => {
-    // Omitting the key entirely must yield false, or an existing contact edited
-    // through an older form payload would silently become unidentified.
-    expect(partySchema.parse(formPayload()).is_unidentified).toBe(false);
-    expect(
-      partySchema.parse(formPayload({ is_unidentified: true })).is_unidentified,
-    ).toBe(true);
-  });
-
   // The payoff clause: this is why it's a row and not a note. Both edges hang off
   // real party ids, so the advisor is reachable AND the anonymous owner is a node
   // that later works and interests can attach to.
@@ -200,21 +223,8 @@ d("parties.is_unidentified (local Supabase)", () => {
     expect(data!.map((p) => p.id)).toEqual([namedId]);
   });
 
-  // The three pickers that select a party for an action with a real-world
-  // consequence — bill, email, charge. A new picker of that kind belongs in this
-  // list. Reading the source is the only way to assert the call site exists: these
-  // are server components needing a Clerk-authed client, so they can't be invoked
-  // from vitest.
-  it.each([
-    ["invoice buyer", "src/app/(app)/invoices/options.ts"],
-    ["viewing-room recipient", "src/app/(app)/rooms/[id]/page.tsx"],
-    ["retainer subscriber", "src/app/(app)/retainers/new/page.tsx"],
-  ])("the %s picker routes its party query through the filter", (_label, file) => {
-    const src = readFileSync(resolve(process.cwd(), file), "utf8");
-    expect(src).toContain("onlyContactableParties(");
-    // No second, unfiltered read of parties hiding in the same file.
-    expect(src.match(/\.from\("parties"\)/g)).toHaveLength(1);
-  });
+  // The companion source assertions — which picker call sites exist at all — need
+  // no database, so they live in the always-on block at the top of this file.
 
   // The counterpart: the CRM list and the Registrar chat deliberately do NOT
   // filter. If a future "tidy up Contacts" change starts hiding these rows, the
