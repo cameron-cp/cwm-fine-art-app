@@ -3,17 +3,16 @@
 import { Button, Flex } from "@radix-ui/themes";
 import { useState } from "react";
 import { Alert } from "@/components/alert";
+import { parseContentDispositionFilename } from "@/lib/pdf/filename";
 
 type Props = {
   artworkId: string;
-  title: string;
   size?: "1" | "2" | "3";
   variant?: "solid" | "soft" | "outline";
 };
 
 export function GenerateTearsheetButton({
   artworkId,
-  title,
   size = "3",
   variant = "solid",
 }: Props) {
@@ -29,11 +28,17 @@ export function GenerateTearsheetButton({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `Tearsheet failed (${res.status})`);
       }
+      // The server names the file ("Picasso, Pablo, Homme au béret basque, 1946 -
+      // Tearsheet.pdf") so the accents survive; the old client-side slug turned
+      // "béret" into "b-ret".
+      const named =
+        parseContentDispositionFilename(res.headers.get("content-disposition")) ??
+        "Tearsheet.pdf";
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${slugify(title)}-tearsheet.pdf`;
+      a.download = named;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -55,12 +60,4 @@ export function GenerateTearsheetButton({
       )}
     </Flex>
   );
-}
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 60) || "artwork";
 }

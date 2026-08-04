@@ -145,6 +145,7 @@ export async function POST(req: Request) {
     edition: modelOutput.edition,
     catalogue_raisonne: modelOutput.catalogue_raisonne,
     provenance_lines: modelOutput.provenance_lines,
+    exhibited: modelOutput.exhibited,
     literature: modelOutput.literature,
   };
 

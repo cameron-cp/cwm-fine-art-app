@@ -23,6 +23,10 @@ export const importDraftSchema = z.object({
   edition: z.string().trim().min(1).nullable(),
   catalogue_raisonne: z.string().trim().min(1).nullable(),
   provenance_lines: z.array(z.string().trim().min(1)).default([]),
+  // .default(null) so drafts saved before the Exhibited field existed still
+  // parse — this schema validates persisted import_drafts.payload jsonb, and a
+  // missing key must not strand a pending import on the review screen.
+  exhibited: z.string().trim().min(1).nullable().default(null),
   literature: z.string().trim().min(1).nullable(),
 });
 
@@ -93,6 +97,11 @@ export const importDraftToolInputSchema = {
       description:
         "Each previous owner or auction record as a separate string, in chronological order. Empty array if no Provenance section.",
     },
+    exhibited: {
+      type: ["string", "null"],
+      description:
+        "Verbatim EXHIBITED / Exhibitions / Exhibition History section text — every exhibition the work has been shown in. Keep each exhibition's full entry intact on one paragraph (city, venue, exhibition title, dates, catalogue figure/page, and any 'traveled to ...' leg all belong to the SAME entry), and separate one exhibition from the next with double newlines. Null if the factsheet has no exhibition section.",
+    },
     literature: {
       type: ["string", "null"],
       description:
@@ -111,6 +120,7 @@ export const importDraftToolInputSchema = {
     "edition",
     "catalogue_raisonne",
     "provenance_lines",
+    "exhibited",
     "literature",
   ],
 };
@@ -145,6 +155,10 @@ export const modelOutputSchema = z.object({
   edition: nullableText,
   catalogue_raisonne: nullableText,
   provenance_lines: z.array(z.string().trim().min(1)).default([]),
+  // Tolerate an omitted key as well as an explicit null: Exhibited is absent
+  // from most factsheets, and a model that drops the property entirely must not
+  // fail the whole extraction.
+  exhibited: nullableText.default(null),
   literature: nullableText,
 });
 

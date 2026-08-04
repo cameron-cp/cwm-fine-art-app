@@ -11,6 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Component tests opt into jsdom with a `@vitest-environment jsdom` docblock;
+    // this file polyfills the layout APIs Radix primitives need there.
+    setupFiles: ["./src/test/setup-dom.ts"],
     // env.ts parses public env at import time; unit tests that import app modules
     // (e.g. the authority lib) need these present. Dummy values — the integration
     // tests that talk to a real stack read their credentials from `supabase status`,
