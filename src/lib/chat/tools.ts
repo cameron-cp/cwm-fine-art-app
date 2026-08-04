@@ -2,6 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveInterestValue } from "@/lib/interests/resolve";
 import { sanitizeSearch } from "@/lib/search";
 import {
+  ARTWORK_PARTY_ROLE_LABELS,
+  TITLE_ROLE,
+  type ArtworkPartyRole,
+} from "@/lib/schemas/artwork-party";
+import {
   interestConfidences,
   interestDimensions,
   interestSchema,
@@ -73,7 +78,7 @@ export const REGISTRAR_TOOLS = [
         year_from: { type: "integer", description: "Earliest year, inclusive. For '1960s' use 1960." },
         year_to: { type: "integer", description: "Latest year, inclusive. For '1960s' use 1969." },
         medium: { type: "string", description: "Medium substring, e.g. 'oil' or 'paper'." },
-        status: { type: "string", enum: ["available", "on_hold", "sold"] },
+        status: { type: "string", enum: ["available", "on_hold", "sold", "not_for_sale"] },
         record_kind: {
           type: "string",
           enum: ["inventory", "tracked"],
@@ -86,7 +91,7 @@ export const REGISTRAR_TOOLS = [
   {
     name: "get_artwork",
     description:
-      "Full record for one artwork by id: dimensions, edition, signature, catalogue raisonné, exhibition history, literature, provenance lines, notes, complete ownership history, and current location.",
+      "Full record for one artwork by id: dimensions, edition, signature, catalogue raisonné, exhibition history, literature, provenance lines, notes, complete ownership history, other parties attached to the work (advisor, gallery, consignor, conservator and the like — these do NOT hold title), and current location.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -111,7 +116,7 @@ export const REGISTRAR_TOOLS = [
   {
     name: "get_party",
     description:
-      "Full profile for one contact by id: roles, recorded interests (what they seek/collect/avoid), relationships to other parties, works they currently own, and the dealer's notes.",
+      "Full profile for one contact by id: roles, recorded interests (what they seek/collect/avoid), relationships to other parties, works they currently own (currently_owns = title only), works they are otherwise attached to without holding title (other_work_links — advisor, gallery, consignor and the like), and the dealer's notes.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -178,7 +183,8 @@ export const REGISTRAR_TOOLS = [
 
 type ArtistEmbed = { id: string; name: string };
 
-type OwnershipEmbed = {
+type ArtworkPartyEmbed = {
+  role: string;
   ended_on: string | null;
   started_on?: string | null;
   confidence: string;
@@ -203,7 +209,8 @@ type ArtworkSearchRow = {
   price_cents: number | null;
   currency: string;
   artist: ArtistEmbed | ArtistEmbed[] | null;
-  ownerships: OwnershipEmbed[] | null;
+  /** ALL party edges, every role — filter before calling any of them an owner. */
+  parties: ArtworkPartyEmbed[] | null;
   location: LocationEmbed | LocationEmbed[] | null;
 };
 
@@ -226,6 +233,7 @@ type PartySearchRow = {
   legal_name: string | null;
   kind: string;
   email: string | null;
+  is_unidentified: boolean;
   roles: { role: string }[] | null;
 };
 
@@ -265,7 +273,9 @@ type OwnedArtworkEmbed = {
   artist: { name: string } | { name: string }[] | null;
 };
 
-type OwnedQueryRow = {
+type LinkedWorkQueryRow = {
+  role: string;
+  started_on: string | null;
   ended_on: string | null;
   confidence: string;
   artwork: OwnedArtworkEmbed | OwnedArtworkEmbed[] | null;
@@ -276,10 +286,12 @@ type OwnedQueryRow = {
 // ---------------------------------------------------------------------------
 
 function ownerNames(
-  ownerships: OwnershipEmbed[],
+  links: ArtworkPartyEmbed[],
   recordKind: string,
 ): { names: string[]; refs: RecordRef[] } {
-  const current = ownerships.filter((o) => o.ended_on === null);
+  // role === TITLE_ROLE is load-bearing: artwork_parties also holds advisor /
+  // gallery / conservator edges, and none of those hold title.
+  const current = links.filter((o) => o.role === TITLE_ROLE && o.ended_on === null);
   const refs: RecordRef[] = [];
   const names = current.flatMap((o) => {
     const p = one(o.party);
@@ -303,10 +315,10 @@ function artworkRefLabel(artist: ArtistEmbed | null, title: string, year: number
   return `${artist?.name ?? "Unknown"}, ${title}${year ? ` (${year})` : ""}`;
 }
 
-const ARTWORK_SEARCH_SELECT =
+export const ARTWORK_SEARCH_SELECT =
   "id, title, year, medium, edition, status, record_kind, price_cents, currency, " +
   "artist:artists(id, name), " +
-  "ownerships:artwork_ownerships(ended_on, confidence, party:parties(id, display_name)), " +
+  "parties:artwork_parties(role, ended_on, confidence, party:parties(id, display_name)), " +
   "location:party_addresses!artworks_current_party_address_id_fkey(label, party:parties(display_name))";
 
 async function searchArtworks(
@@ -372,7 +384,7 @@ async function searchArtworks(
   const refs: RecordRef[] = [];
   const works = rows.map((row) => {
     const artist = one(row.artist);
-    const owners = ownerNames(many(row.ownerships), row.record_kind);
+    const owners = ownerNames(many(row.parties), row.record_kind);
     refs.push({ kind: "artwork", id: row.id, label: artworkRefLabel(artist, row.title, row.year) });
     refs.push(...owners.refs);
     return {
@@ -397,20 +409,25 @@ async function searchArtworks(
   };
 }
 
+export const ARTWORK_DETAIL_SELECT =
+  "id, title, year, medium, edition, status, record_kind, price_cents, currency, " +
+  "height_in, width_in, depth_in, signature_details, catalogue_raisonne, exhibited, " +
+  "literature, provenance_lines, condition, notes, " +
+  "artist:artists(id, name), " +
+  "parties:artwork_parties(role, started_on, ended_on, source, confidence, notes, party:parties(id, display_name)), " +
+  "location:party_addresses!artworks_current_party_address_id_fkey(label, party:parties(display_name))";
+
+/** Every OPEN link for one party, all roles — getParty splits title from the rest. */
+export const PARTY_WORK_LINKS_SELECT =
+  "role, started_on, ended_on, confidence, artwork:artworks(id, title, year, artist:artists(name))";
+
 async function getArtwork(
   supabase: SupabaseClient,
   input: { artwork_id: string },
 ): Promise<ToolExecution> {
   const { data, error } = await supabase
     .from("artworks")
-    .select(
-      "id, title, year, medium, edition, status, record_kind, price_cents, currency, " +
-        "height_in, width_in, depth_in, signature_details, catalogue_raisonne, exhibited, literature, " +
-        "provenance_lines, condition, notes, " +
-        "artist:artists(id, name), " +
-        "ownerships:artwork_ownerships(started_on, ended_on, source, confidence, notes, party:parties(id, display_name)), " +
-        "location:party_addresses!artworks_current_party_address_id_fkey(label, party:parties(display_name))",
-    )
+    .select(ARTWORK_DETAIL_SELECT)
     .eq("id", input.artwork_id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -424,11 +441,14 @@ async function getArtwork(
     { kind: "artwork", id: row.id, label: artworkRefLabel(artist, row.title, row.year) },
   ];
 
-  const ownership_history = many(row.ownerships).map((o) => {
+  // Split title edges from everything else so the model can never read an
+  // advisor or a conservator as an owner of the work.
+  const allLinks = many(row.parties).map((o) => {
     const p = one(o.party);
     if (p) refs.push({ kind: "party", id: p.id, label: p.display_name });
     return {
-      owner: p?.display_name ?? "Unknown party",
+      role: o.role,
+      party: p?.display_name ?? "Unknown party",
       current: o.ended_on === null,
       from: o.started_on ?? null,
       to: o.ended_on,
@@ -437,6 +457,33 @@ async function getArtwork(
       notes: o.notes ?? null,
     };
   });
+
+  // Keys are spelled out rather than rest-spread so the model-facing payload is
+  // legible here — `owner` must never appear on a non-title row.
+  const ownership_history = allLinks
+    .filter((l) => l.role === TITLE_ROLE)
+    .map((l) => ({
+      owner: l.party,
+      current: l.current,
+      from: l.from,
+      to: l.to,
+      source: l.source,
+      confidence: l.confidence,
+      notes: l.notes,
+    }));
+
+  const other_parties = allLinks
+    .filter((l) => l.role !== TITLE_ROLE)
+    .map((l) => ({
+      party: l.party,
+      role: ARTWORK_PARTY_ROLE_LABELS[l.role as ArtworkPartyRole] ?? l.role,
+      current: l.current,
+      from: l.from,
+      to: l.to,
+      source: l.source,
+      confidence: l.confidence,
+      notes: l.notes,
+    }));
 
   return {
     result: {
@@ -462,6 +509,7 @@ async function getArtwork(
       condition: row.condition,
       dealer_notes: row.notes,
       ownership_history,
+      other_parties,
       location: locationLabel(one(row.location)),
     },
     refs,
@@ -479,7 +527,9 @@ async function searchParties(
 
   const { data, error } = await supabase
     .from("parties")
-    .select("id, display_name, legal_name, kind, email, roles:party_roles(role)")
+    .select(
+      "id, display_name, legal_name, kind, email, is_unidentified, roles:party_roles(role)",
+    )
     .or(`display_name.ilike.%${term}%,legal_name.ilike.%${term}%,email.ilike.%${term}%`)
     .order("display_name")
     .limit(limit);
@@ -494,6 +544,10 @@ async function searchParties(
       name: p.display_name,
       kind: p.kind,
       email: p.email,
+      // The chat SHOULD surface these (answering "who holds this" is the point),
+      // but the model must not treat the placeholder name as a contactable person
+      // or suggest emailing/invoicing them. See migration 0022.
+      unidentified: p.is_unidentified,
       roles: many(p.roles).map((r) => r.role),
     };
   });
@@ -511,7 +565,9 @@ async function getParty(
 ): Promise<ToolExecution> {
   const { data: partyData, error } = await supabase
     .from("parties")
-    .select("id, display_name, legal_name, kind, email, phone, notes, roles:party_roles(role)")
+    .select(
+      "id, display_name, legal_name, kind, email, phone, notes, is_unidentified, roles:party_roles(role)",
+    )
     .eq("id", input.party_id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -536,9 +592,10 @@ async function getParty(
         "type, valid_from, valid_to, notes, from_party:parties!party_relationships_from_party_id_fkey(id, display_name), to_party:parties!party_relationships_to_party_id_fkey(id, display_name)",
       )
       .or(`from_party_id.eq.${input.party_id},to_party_id.eq.${input.party_id}`),
+    // Every OPEN link, all roles — split below into title vs. everything else.
     supabase
-      .from("artwork_ownerships")
-      .select("ended_on, confidence, artwork:artworks(id, title, year, artist:artists(name))")
+      .from("artwork_parties")
+      .select(PARTY_WORK_LINKS_SELECT)
       .eq("party_id", input.party_id)
       .is("ended_on", null),
   ]);
@@ -547,7 +604,7 @@ async function getParty(
   }
   const interestRows = (interestsRes.data ?? []) as unknown as InterestQueryRow[];
   const relRows = (relsRes.data ?? []) as unknown as RelationshipQueryRow[];
-  const ownRows = (ownsRes.data ?? []) as unknown as OwnedQueryRow[];
+  const ownRows = (ownsRes.data ?? []) as unknown as LinkedWorkQueryRow[];
 
   const interests = interestRows.map((r) => {
     const artist = one(r.artist);
@@ -586,7 +643,7 @@ async function getParty(
     };
   });
 
-  const owns = ownRows.flatMap((o) => {
+  const linkedWorks = ownRows.flatMap((o) => {
     const a = one(o.artwork);
     if (!a) return [];
     refs.push({
@@ -596,13 +653,39 @@ async function getParty(
     });
     return [
       {
+        role: o.role,
         artist: one(a.artist)?.name ?? null,
         title: a.title,
         year: a.year,
+        since: o.started_on,
         confidence: o.confidence,
       },
     ];
   });
+
+  // currently_owns keeps meaning TITLE and nothing else; the other roles ship as
+  // their own key so the model states them accurately instead of blurring them
+  // into ownership.
+  const owns = linkedWorks
+    .filter((w) => w.role === TITLE_ROLE)
+    .map((w) => ({
+      artist: w.artist,
+      title: w.title,
+      year: w.year,
+      since: w.since,
+      confidence: w.confidence,
+    }));
+
+  const other_work_links = linkedWorks
+    .filter((w) => w.role !== TITLE_ROLE)
+    .map((w) => ({
+      role: ARTWORK_PARTY_ROLE_LABELS[w.role as ArtworkPartyRole] ?? w.role,
+      artist: w.artist,
+      title: w.title,
+      year: w.year,
+      since: w.since,
+      confidence: w.confidence,
+    }));
 
   return {
     result: {
@@ -612,11 +695,13 @@ async function getParty(
       kind: party.kind,
       email: party.email,
       phone: party.phone,
+      unidentified: party.is_unidentified,
       roles: many(party.roles).map((r) => r.role),
       dealer_notes: party.notes,
       interests,
       relationships,
       currently_owns: owns,
+      other_work_links,
     },
     refs,
     summary: party.display_name,

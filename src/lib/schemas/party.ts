@@ -114,6 +114,11 @@ export const partySchema = z
     website_url: optionalUrl,
     linkedin_url: linkedinUrl,
     notes: optionalText,
+    // A holder she knows exists but cannot name ("private collectors in Palm
+    // Beach", per the advisor). Real row so artwork_parties can point role='owner'
+    // at it; flagged so it never reaches a picker that bills, emails, or charges.
+    // See migration 0022.
+    is_unidentified: z.boolean().default(false),
     roles: z.array(partyRole).default([]),
     addresses: z.array(partyAddressSchema).default([]),
   })
@@ -189,6 +194,9 @@ export type Party = {
   website_url: string | null;
   linkedin_url: string | null;
   notes: string | null;
+  // Known to exist, not nameable (migration 0022). Excluded from every
+  // outward-action picker; a DB CHECK also bars it from holding a Stripe customer.
+  is_unidentified: boolean;
   // Stripe Customer id (migration 0013), created lazily. null until a payment
   // method or checkout first needs a customer.
   stripe_customer_id: string | null;

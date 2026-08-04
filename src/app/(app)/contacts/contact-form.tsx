@@ -101,6 +101,7 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
       website_url: party?.website_url ?? null,
       linkedin_url: party?.linkedin_url ?? null,
       notes: party?.notes ?? null,
+      is_unidentified: party?.is_unidentified ?? false,
       roles,
       addresses: addresses.length
         ? addresses.map((a) => ({
@@ -186,6 +187,31 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
             {...register("display_name")}
             placeholder="e.g. Howard Rachofsky, or Gagosian Gallery"
           />
+        </Field>
+
+        <Field label="Identification">
+          <Controller
+            control={control}
+            name="is_unidentified"
+            render={({ field }) => (
+              <Text as="label" size="2">
+                <Flex gap="2" align="center">
+                  <Checkbox
+                    checked={field.value === true}
+                    onCheckedChange={(v) => field.onChange(v === true)}
+                  />
+                  Unidentified — I know they exist but not who they are
+                </Flex>
+              </Text>
+            )}
+          />
+          <Text size="1" color="gray">
+            For a holder you can&apos;t name — e.g. &ldquo;Private collection
+            (Palm Beach, FL)&rdquo; behind an advisor. You can still link works to
+            them and record what they collect. They stay out of invoices, viewing
+            room recipients, and retainers, and can&apos;t hold a card on file.
+            Rename them later and every link follows.
+          </Text>
         </Field>
 
         <Flex gap="3">

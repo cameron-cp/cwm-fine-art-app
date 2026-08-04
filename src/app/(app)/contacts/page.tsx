@@ -16,16 +16,28 @@ import {
 } from "@/lib/schemas/party";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
+// Unidentified holders (0022) are shown here by DEFAULT, unlike in the invoice /
+// room / retainer pickers which hard-exclude them. They're records she's actively
+// working, and hiding them by default would make the flag feel like a delete — she'd
+// have to know a filter existed to find them again. The tag on the row carries the
+// warning instead, and this filter isolates or excludes them on demand.
+const IDENTIFICATION_OPTIONS = [
+  { value: "named", label: "Named only" },
+  { value: "unidentified", label: "Unidentified only" },
+] as const;
+
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; kind?: string; role?: string }>;
+  searchParams: Promise<{ q?: string; kind?: string; role?: string; ident?: string }>;
 }) {
   const sp = await searchParams;
   const q = sanitizeSearch(sp.q);
   const kind = partyKind.safeParse(firstParam(sp.kind)).success ? firstParam(sp.kind) : "";
   const role = partyRole.safeParse(firstParam(sp.role)).success ? firstParam(sp.role) : "";
-  const hasFilters = !!(sp.q?.trim() || kind || role);
+  const identParam = firstParam(sp.ident);
+  const ident = IDENTIFICATION_OPTIONS.some((o) => o.value === identParam) ? identParam : "";
+  const hasFilters = !!(sp.q?.trim() || kind || role || ident);
 
   const supabase = getSupabaseServer();
 
@@ -41,11 +53,12 @@ export default async function ContactsPage({
 
   let query = supabase
     .from("parties")
-    .select("id, kind, display_name, email")
+    .select("id, kind, display_name, email, is_unidentified")
     .order("display_name");
 
   if (q) query = query.or(`display_name.ilike.%${q}%,email.ilike.%${q}%`);
   if (kind) query = query.eq("kind", kind);
+  if (ident) query = query.eq("is_unidentified", ident === "unidentified");
   if (roleIdFilter)
     query = query.in(
       "id",
@@ -54,7 +67,10 @@ export default async function ContactsPage({
 
   const { data: parties } = await query;
 
-  const rows = (parties ?? []) as Pick<Party, "id" | "kind" | "display_name" | "email">[];
+  const rows = (parties ?? []) as Pick<
+    Party,
+    "id" | "kind" | "display_name" | "email" | "is_unidentified"
+  >[];
 
   // Roles for the displayed parties only.
   const partyIds = rows.map((p) => p.id);
@@ -94,6 +110,12 @@ export default async function ContactsPage({
           allLabel="All roles"
           options={partyRoles.map((r) => ({ value: r, label: PARTY_ROLE_LABELS[r as PartyRole] }))}
         />
+        <FilterSelect
+          paramKey="ident"
+          label="Identification"
+          allLabel="All contacts"
+          options={IDENTIFICATION_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+        />
         {hasFilters && <ClearFilters href="/contacts" />}
         <Text size="1" className="self-end num text-[var(--ink-3)]" ml="auto">
           {rows.length} {rows.length === 1 ? "contact" : "contacts"}
@@ -116,12 +138,24 @@ export default async function ContactsPage({
             {rows.map((p) => (
               <Table.Row key={p.id} align="center">
                 <Table.Cell>
-                  <Link
-                    href={`/contacts/${p.id}`}
-                    className="font-serif text-[16px] text-[var(--ink)] hover:underline"
-                  >
-                    {p.display_name}
-                  </Link>
+                  <Flex gap="2" align="center" wrap="wrap">
+                    <Link
+                      href={`/contacts/${p.id}`}
+                      className="font-serif text-[16px] text-[var(--ink)] hover:underline"
+                    >
+                      {p.display_name}
+                    </Link>
+                    {/* Not a status — no sage/amber. Muted ink says "this name is a
+                        placeholder" without competing with the work on screen. */}
+                    {p.is_unidentified && (
+                      <span
+                        title="Known to exist but not named — excluded from invoices, viewing rooms, and retainers"
+                        className="border border-dashed border-[var(--rule-2)] px-[7px] py-[2px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink-3)]"
+                      >
+                        Unidentified
+                      </span>
+                    )}
+                  </Flex>
                 </Table.Cell>
                 <Table.Cell>
                   <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--ink-3)]">
