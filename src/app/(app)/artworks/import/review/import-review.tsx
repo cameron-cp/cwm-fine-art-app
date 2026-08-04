@@ -35,6 +35,7 @@ export function ImportReview({ draft, artists: initialArtists }: Props) {
     edition: draft.edition,
     catalogue_raisonne: draft.catalogue_raisonne,
     provenance_lines: draft.provenance_lines.map((value) => ({ value })),
+    exhibited: draft.exhibited,
     literature: draft.literature,
   };
 

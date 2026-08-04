@@ -86,7 +86,7 @@ export const REGISTRAR_TOOLS = [
   {
     name: "get_artwork",
     description:
-      "Full record for one artwork by id: dimensions, edition, signature, catalogue raisonné, literature, provenance lines, notes, complete ownership history, and current location.",
+      "Full record for one artwork by id: dimensions, edition, signature, catalogue raisonné, exhibition history, literature, provenance lines, notes, complete ownership history, and current location.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -213,6 +213,7 @@ type ArtworkDetailRow = ArtworkSearchRow & {
   depth_in: number | null;
   signature_details: string | null;
   catalogue_raisonne: string | null;
+  exhibited: string | null;
   literature: string | null;
   provenance_lines: string[] | null;
   condition: string | null;
@@ -404,7 +405,7 @@ async function getArtwork(
     .from("artworks")
     .select(
       "id, title, year, medium, edition, status, record_kind, price_cents, currency, " +
-        "height_in, width_in, depth_in, signature_details, catalogue_raisonne, literature, " +
+        "height_in, width_in, depth_in, signature_details, catalogue_raisonne, exhibited, literature, " +
         "provenance_lines, condition, notes, " +
         "artist:artists(id, name), " +
         "ownerships:artwork_ownerships(started_on, ended_on, source, confidence, notes, party:parties(id, display_name)), " +
@@ -455,6 +456,7 @@ async function getArtwork(
       },
       signature: row.signature_details,
       catalogue_raisonne: row.catalogue_raisonne,
+      exhibited: row.exhibited,
       literature: row.literature,
       provenance_lines: row.provenance_lines,
       condition: row.condition,

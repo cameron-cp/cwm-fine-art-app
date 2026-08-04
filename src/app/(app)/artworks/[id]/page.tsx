@@ -96,7 +96,7 @@ export default async function EditArtworkPage({
             {artwork.title}
           </Heading>
         </Box>
-        <GenerateTearsheetButton artworkId={artwork.id} title={artwork.title} />
+        <GenerateTearsheetButton artworkId={artwork.id} />
       </Flex>
 
       <Flex gap="6" align="start" wrap="wrap">

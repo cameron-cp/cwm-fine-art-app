@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { getServerEnv, publicEnv } from "@/lib/env";
+import { renderBaseUrl } from "@/lib/pdf/base-url";
 import { renderPdfViaBrowserless } from "@/lib/pdf/browserless";
 import { getRenderServiceClient } from "@/lib/supabase/render-client";
 
@@ -43,15 +44,11 @@ export async function POST(
     // Non-fatal: fall back to the generic filename.
   }
 
-  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL ?? originFrom(req);
+  const appUrl = renderBaseUrl(publicEnv.NEXT_PUBLIC_APP_URL, req.url);
   const renderUrl = `${appUrl}/invoice/render/${parsed.data.id}?token=${encodeURIComponent(
     env.INVOICE_RENDER_SECRET,
   )}`;
 
-  return renderPdfViaBrowserless({ renderUrl, filename });
+  return renderPdfViaBrowserless({ renderUrl, expectSelector: ".inv-page", filename });
 }
 
-function originFrom(req: Request): string {
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
-}

@@ -68,12 +68,7 @@ export function ArtworkCard({ artwork }: { artwork: ArtworkCardData }) {
         </div>
       </div>
 
-      <GenerateTearsheetButton
-        artworkId={artwork.id}
-        title={artwork.title}
-        size="2"
-        variant="outline"
-      />
+      <GenerateTearsheetButton artworkId={artwork.id} size="2" variant="outline" />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { getServerEnv, publicEnv } from "@/lib/env";
+import { renderBaseUrl } from "@/lib/pdf/base-url";
 import { renderPdfViaBrowserless } from "@/lib/pdf/browserless";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
@@ -30,15 +31,15 @@ export async function POST(
     );
   }
 
-  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL ?? originFrom(req);
+  const appUrl = renderBaseUrl(publicEnv.NEXT_PUBLIC_APP_URL, req.url);
   const renderUrl = `${appUrl}/room/render/${parsed.data.id}?token=${encodeURIComponent(
     env.VIEWING_ROOM_RENDER_SECRET,
   )}`;
 
-  return renderPdfViaBrowserless({ renderUrl, filename: "viewing-room.pdf" });
+  return renderPdfViaBrowserless({
+    renderUrl,
+    expectSelector: ".rp-doc",
+    filename: "viewing-room.pdf",
+  });
 }
 
-function originFrom(req: Request): string {
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
-}
