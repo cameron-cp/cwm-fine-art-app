@@ -127,6 +127,7 @@ export function ArtworkForm(props: Props) {
         edition: artwork.edition,
         catalogue_raisonne: artwork.catalogue_raisonne,
         provenance_lines: artwork.provenance_lines.map((value) => ({ value })),
+        exhibited: artwork.exhibited,
         literature: artwork.literature,
         condition: artwork.condition,
         price_cents: priceCentsToDollarString(artwork.price_cents),
@@ -152,6 +153,7 @@ export function ArtworkForm(props: Props) {
           (entry) =>
             typeof entry === "string" ? { value: entry } : entry,
         ),
+        exhibited: initialValues.exhibited ?? null,
         literature: initialValues.literature ?? null,
         condition: initialValues.condition ?? null,
         price_cents: priceCentsToDollarString(initialValues.price_cents),
@@ -173,6 +175,7 @@ export function ArtworkForm(props: Props) {
         edition: null,
         catalogue_raisonne: null,
         provenance_lines: [],
+        exhibited: null,
         literature: null,
         condition: null,
         price_cents: priceCentsToDollarString(null),
@@ -451,6 +454,17 @@ export function ArtworkForm(props: Props) {
             </Flex>
           ))}
         </Flex>
+
+        <Field label="Exhibited" error={errors.exhibited?.message}>
+          <TextArea
+            {...register("exhibited")}
+            rows={5}
+            placeholder={`Santa Fe, Gerald Peters Gallery, Picasso on Paper, Selected Works from the Marina Picasso Collection, August – November 1998, fig. 10, n.p., traveled to Dallas, Gerald Peters Gallery, November – December 1998.`}
+          />
+          <Text size="1" color="gray">
+            One exhibition per paragraph, oldest first. Separate them with a blank line.
+          </Text>
+        </Field>
 
         <Field label="Literature" error={errors.literature?.message}>
           <TextArea

@@ -83,10 +83,8 @@ export default async function TearsheetRenderPage({
   const artistByline = [nationality, years].filter(Boolean).join(", ");
 
   const provenance = artwork.provenance_lines ?? [];
-  const literatureParagraphs = (artwork.literature ?? "")
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const exhibitedParagraphs = splitParagraphs(artwork.exhibited);
+  const literatureParagraphs = splitParagraphs(artwork.literature);
 
   return (
     <div className="ts-page">
@@ -130,6 +128,19 @@ export default async function TearsheetRenderPage({
         </section>
       )}
 
+      {/* Provenance → Exhibited → Literature: the order a dealer factsheet and
+          an auction catalogue both use. */}
+      {exhibitedParagraphs.length > 0 && (
+        <section className="ts-section">
+          <h3 className="ts-section-heading">Exhibited</h3>
+          {exhibitedParagraphs.map((p, i) => (
+            <p key={i} className="ts-paragraph">
+              {p}
+            </p>
+          ))}
+        </section>
+      )}
+
       {literatureParagraphs.length > 0 && (
         <section className="ts-section">
           <h3 className="ts-section-heading">Literature</h3>
@@ -144,4 +155,13 @@ export default async function TearsheetRenderPage({
       <footer className="ts-footer">{GALLERY_NAME}</footer>
     </div>
   );
+}
+
+// Blank-line-separated entries → one <p> each. Shared by Exhibited + Literature,
+// which are both stored as free text with a paragraph per entry.
+function splitParagraphs(value: string | null | undefined): string[] {
+  return (value ?? "")
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 }

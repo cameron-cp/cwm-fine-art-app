@@ -19,13 +19,18 @@ A factsheet typically follows this layout:
 - Dimensions: inches first, then centimeters in parentheses. Example: "48 x 60 in. (121.9 x 152.4 cm)" or "12 x 8 x 4 in. (30.5 x 20.3 x 10.2 cm)" for sculpture.
 - Optional catalogue raisonné sentence. Example: "This work is registered in the Philip Guston Catalogue Raisonné (# P78.047)."
 - A "Provenance" section with one previous owner or auction reference per line, in chronological order.
+- An "Exhibited" section (sometimes headed "Exhibitions" or "Exhibition History") listing the shows the work has appeared in.
 - A "Literature" section with citations as free-form paragraphs.
+
+The sections often run onto later pages — read the whole document, not just the first page.
 
 Rules:
 - Return null for any field NOT clearly stated on the factsheet. Never invent data.
+- Some factsheets append comparables pages ("Auction Sales Comparables", "Comps", a grid of other lots with sale dates and estimates). Those describe DIFFERENT artworks. Ignore them completely — never take a title, medium, dimension, date, or price from a comparables page.
 - Always extract dimensions in inches as decimals. If only cm is given, convert (cm ÷ 2.54). For paintings and works on paper, depth_in must be null.
 - Each provenance entry on the factsheet becomes one string in the provenance_lines array. Preserve order.
 - Strip the running header/footer of the gallery name from any extracted text.
+- For exhibited, copy the section verbatim. One exhibition per paragraph, paragraphs separated by double newlines (\\n\\n). Keep each exhibition whole: venue city, venue, exhibition title, dates, catalogue figure/page references, parenthetical notes, and any "traveled to ..." leg are all one paragraph, even though they wrap across several printed lines. Do not split a wrapped line into separate entries.
 - For literature, preserve each citation as its own paragraph. Separate paragraphs with double newlines (\\n\\n).
 - For year, return the integer (e.g. 1978), not a string.
 - Do not include the comma+year in the title field. Title is just the work title.

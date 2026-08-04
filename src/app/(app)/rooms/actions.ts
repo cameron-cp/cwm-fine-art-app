@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { publicEnv, getServerEnv } from "@/lib/env";
 import { sendEmail } from "@/lib/email/send";
+import { renderBaseUrl } from "@/lib/pdf/base-url";
 import { renderPdfBytesViaBrowserless } from "@/lib/pdf/browserless";
 import { buildInviteEmail } from "@/lib/rooms/invite-email";
 import { generateRoomToken } from "@/lib/rooms/token";
@@ -225,7 +226,10 @@ export async function revokeRecipient(
 export async function sendInvite(
   recipientId: string,
 ): Promise<Result<{ id: string }>> {
-  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL;
+  // Scheme + host only — a stray path on NEXT_PUBLIC_APP_URL would otherwise be
+  // baked into the collector's room link as well as the render URL. See
+  // renderBaseUrl for the incident.
+  const appUrl = renderBaseUrl(publicEnv.NEXT_PUBLIC_APP_URL, "");
   if (!appUrl) return { error: "NEXT_PUBLIC_APP_URL is not configured." };
 
   const supabase = getSupabaseServer();
@@ -257,7 +261,10 @@ export async function sendInvite(
     const renderUrl = `${appUrl}/room/render/${recipient.room_id}?token=${encodeURIComponent(
       env.VIEWING_ROOM_RENDER_SECRET,
     )}`;
-    const res = await renderPdfBytesViaBrowserless({ renderUrl });
+    const res = await renderPdfBytesViaBrowserless({
+      renderUrl,
+      expectSelector: ".rp-doc",
+    });
     if ("data" in res) {
       pdf = { filename: "viewing-room.pdf", bytes: res.data };
     }

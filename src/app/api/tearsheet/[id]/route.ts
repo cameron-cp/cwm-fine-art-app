@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { getServerEnv, publicEnv } from "@/lib/env";
+import { renderBaseUrl } from "@/lib/pdf/base-url";
 import { renderPdfViaBrowserless } from "@/lib/pdf/browserless";
+import { tearsheetFilename } from "@/lib/pdf/filename";
+import { getSupabaseServer } from "@/lib/supabase/server";
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
@@ -28,15 +31,38 @@ export async function POST(
     );
   }
 
-  const appUrl = publicEnv.NEXT_PUBLIC_APP_URL ?? originFrom(req);
+  const appUrl = renderBaseUrl(publicEnv.NEXT_PUBLIC_APP_URL, req.url);
   const renderUrl = `${appUrl}/tearsheet/render/${parsed.data.id}?token=${encodeURIComponent(
     env.TEARSHEET_RENDER_SECRET,
   )}`;
 
-  return renderPdfViaBrowserless({ renderUrl, filename: "tearsheet.pdf" });
+  return renderPdfViaBrowserless({
+    renderUrl,
+    expectSelector: ".ts-page",
+    filename: await filenameFor(parsed.data.id),
+  });
 }
 
-function originFrom(req: Request): string {
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
+// "Picasso, Pablo, Homme au béret basque, 1946 - Tearsheet.pdf". Named on the
+// server so every caller gets the same name and the accents survive; a non-fatal
+// lookup, since a bare "Tearsheet.pdf" is better than failing the export.
+async function filenameFor(artworkId: string): Promise<string> {
+  try {
+    const supabase = getSupabaseServer();
+    const { data } = await supabase
+      .from("artworks")
+      .select("title, year, artists(name, sort_name)")
+      .eq("id", artworkId)
+      .maybeSingle();
+
+    const artist = Array.isArray(data?.artists) ? data?.artists[0] : data?.artists;
+    return tearsheetFilename({
+      artistSortName: artist?.sort_name ?? null,
+      artistName: artist?.name ?? null,
+      title: data?.title ?? null,
+      year: data?.year ?? null,
+    });
+  } catch {
+    return tearsheetFilename({});
+  }
 }

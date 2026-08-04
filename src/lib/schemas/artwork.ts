@@ -37,6 +37,10 @@ export const artworkSchema = z.object({
   edition: optionalText,
   catalogue_raisonne: optionalText,
   provenance_lines: z.array(provenanceLineSchema).default([]),
+  // Exhibition history. Free text, one exhibition per paragraph — same shape as
+  // literature, not the text[] shape of provenance_lines (see 0023 for why).
+  // Ordered Provenance → Exhibited → Literature to match catalogue convention.
+  exhibited: optionalText,
   literature: optionalText,
   condition: optionalText,
   price_cents: optionalPriceCents,
