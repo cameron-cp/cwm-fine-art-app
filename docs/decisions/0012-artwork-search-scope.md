@@ -1,4 +1,4 @@
-# 0010 — Artwork search indexes identity, not scholarly apparatus
+# 0012 — Artwork search indexes identity, not scholarly apparatus
 
 Status: accepted (2026-08-04)
 
