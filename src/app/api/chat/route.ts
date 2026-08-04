@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveFeatureModel } from "@/lib/ai/settings";
 import { runRegistrar, RegistrarError } from "@/lib/chat/agent";
 import { getServerEnv } from "@/lib/env";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -52,10 +53,12 @@ export async function POST(req: Request) {
 
   try {
     const supabase = getSupabaseServer();
+    const { model } = await getEffectiveFeatureModel("chat", supabase);
     const { reply, toolEvents } = await runRegistrar(
       parsed.data.messages,
       supabase,
       env.ANTHROPIC_API_KEY,
+      model,
     );
     return NextResponse.json({ data: { reply, toolEvents } });
   } catch (err) {

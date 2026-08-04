@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { getEffectiveFeatureModel } from "@/lib/ai/settings";
 import { getServerEnv } from "@/lib/env";
 import {
   ExtractionError,
@@ -88,7 +89,8 @@ export async function POST(req: Request) {
 
   let modelOutput;
   try {
-    modelOutput = await extractArtworkFromPdf(buf, env.ANTHROPIC_API_KEY);
+    const { model } = await getEffectiveFeatureModel("import", getSupabaseServer());
+    modelOutput = await extractArtworkFromPdf(buf, env.ANTHROPIC_API_KEY, model);
   } catch (e) {
     if (e instanceof ExtractionError) {
       return NextResponse.json({ error: e.message }, { status: 422 });

@@ -18,6 +18,10 @@ const serverSchema = z.object({
   // Separate secret from tearsheet/invoice so a leak is compartmentalized.
   VIEWING_ROOM_RENDER_SECRET: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
+  // Per-feature AI model overrides. Owned and validated by src/lib/ai/models.ts
+  // (resolveFeatureModel reads process.env directly), so they are intentionally
+  // NOT re-parsed here — this schema stays the single env surface for secrets,
+  // while the AI_MODEL_* namespace lives with the registry. See ADR 0009.
   // Resend. Sending is guarded on RESEND_API_KEY being present, so the app
   // runs fine without it (mirrors BROWSERLESS_API_KEY). EMAIL_FROM must be a
   // Resend-verified sender; "Name <addr@domain>" or a bare address both work.

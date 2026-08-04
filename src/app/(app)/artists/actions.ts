@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getEffectiveFeatureModel } from "@/lib/ai/settings";
 import { generateArtistBio as runBioGeneration, type BioResult } from "@/lib/artist/bio";
 import { formatNationalities } from "@/lib/countries";
 import { getServerEnv } from "@/lib/env";
@@ -129,9 +130,11 @@ export async function generateArtistBio(input: BioRequest): Promise<Result<BioRe
           : "";
 
   try {
+    const { model } = await getEffectiveFeatureModel("bio", getSupabaseServer());
     const result = await runBioGeneration(
       { name, nationalityLabel: formatNationalities(nationalities), lifeLabel, works },
       env.ANTHROPIC_API_KEY,
+      model,
     );
     return { data: result };
   } catch (e) {
