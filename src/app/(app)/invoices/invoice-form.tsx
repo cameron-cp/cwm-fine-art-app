@@ -441,9 +441,9 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
         </Flex>
 
         <Flex direction="column" gap="1" align="end" className="border-t border-[var(--rule)] pt-3">
-          <Text size="2">Subtotal: {formatInvoiceMoney(totals.subtotal, watchedCurrency)}</Text>
-          <Text size="2">Shipping: {formatInvoiceMoney(totals.shipping, watchedCurrency)}</Text>
-          <Text size="4" weight="bold">Total: {formatInvoiceMoney(totals.total, watchedCurrency)}</Text>
+          <Text size="2">Subtotal: <span className="num">{formatInvoiceMoney(totals.subtotal, watchedCurrency)}</span></Text>
+          <Text size="2">Shipping: <span className="num">{formatInvoiceMoney(totals.shipping, watchedCurrency)}</span></Text>
+          <Text size="4" weight="bold">Total: <span className="num">{formatInvoiceMoney(totals.total, watchedCurrency)}</span></Text>
         </Flex>
 
         <Field label="Notes (internal)"><TextArea {...register("notes")} rows={2} /></Field>
