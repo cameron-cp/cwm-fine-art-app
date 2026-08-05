@@ -3,6 +3,7 @@ import { MuseumWallLabel, type WallLabelStatus } from "@/components/museum-wall-
 import { GALLERY_NAME } from "@/lib/brand";
 import { getServerEnv } from "@/lib/env";
 import { loadRoomWorks, resolveRoomPrice } from "@/lib/rooms/public";
+import { ARTWORK_STATUS_META } from "@/lib/schemas/artwork";
 import type { RoomRow } from "@/lib/schemas/viewing-room";
 import { getRenderServiceClient } from "@/lib/supabase/render-client";
 import { formatPriceCents } from "@/lib/supabase/storage";
@@ -15,11 +16,9 @@ export const dynamic = "force-dynamic";
 // the SHARED museum-wall-label component + the room_public_artworks whitelist +
 // batch image signing — the same public read path as the on-screen room.
 
-const STATUS_META: Record<string, WallLabelStatus> = {
-  available: { label: "Available", tone: "positive" },
-  on_hold: { label: "On hold", tone: "warning" },
-  sold: { label: "Sold", tone: "muted" },
-};
+// Label + tone come from the shared status meta; widened to Record<string, …>
+// because the public view hands back status as plain text.
+const STATUS_META: Record<string, WallLabelStatus> = ARTWORK_STATUS_META;
 
 export default async function RoomRenderPage({
   params,

@@ -16,7 +16,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import {
+  ARTWORK_STATUS_META,
   artworkSchema,
+  artworkStatus,
   type Artwork,
   type ArtworkFormInput,
   type ArtworkInput,
@@ -75,11 +77,10 @@ type NewProps = SharedProps & {
 
 type Props = EditProps | ImportProps | NewProps;
 
-const STATUSES: { value: "available" | "on_hold" | "sold"; label: string }[] = [
-  { value: "available", label: "Available" },
-  { value: "on_hold", label: "On hold" },
-  { value: "sold", label: "Sold" },
-];
+const STATUSES = artworkStatus.options.map((value) => ({
+  value,
+  label: ARTWORK_STATUS_META[value].label,
+}));
 
 function priceCentsToDollarString(cents: number | null | undefined): string {
   if (cents === null || cents === undefined) return "";
