@@ -48,10 +48,21 @@ export const optionalYear = z.preprocess(
   z.number().int().min(1).max(3000).nullable(),
 );
 
-// "1,200" | "1200.50" | "$1,200" → integer cents; blank/invalid → null.
+// The unit depends on the JS type, and that distinction is load-bearing:
+//   string → dollar text as typed ("1,200", "1200.50", "$1,200") → ×100 to cents
+//   number → ALREADY integer cents; passes through untouched
+//
+// Numbers must not be re-scaled, because these schemas really do get parsed
+// twice: zodResolver validates in the form, then the server action re-validates
+// the resolver's own OUTPUT (defense in depth — the client can't be trusted).
+// When numbers were treated as dollars, that second pass multiplied every saved
+// amount by 100 — a $9,000,000 artwork stored as $900,000,000. The retainer form
+// and the chat's log_collector_interest tool also hand these fields real cents.
+// A caller holding dollars as a number converts first (Math.round(d * 100)); a
+// fractional value now fails .int() loudly instead of silently meaning dollars.
 function toCentsOrNull(v: unknown): number | null | unknown {
   if (v === "" || v === null || v === undefined) return null;
-  if (typeof v === "number") return Math.round(v * 100);
+  if (typeof v === "number") return v;
   if (typeof v === "string") {
     const cleaned = v.replace(/[^0-9.]/g, "");
     if (cleaned === "") return null;

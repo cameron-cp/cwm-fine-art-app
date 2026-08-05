@@ -49,15 +49,21 @@ function invoicePayload(overrides: Record<string, unknown> = {}) {
   };
 }
 
+// Stripe ids must be unique per payment, and the RPC looks a payment row up by
+// payment_intent_id ALONE (0013, not scoped to the invoice) — so a shared
+// "pi_test_1" makes one test's event update the previous test's payment row
+// instead of writing its own. Derive both ids from the invoice id to keep each
+// test's payment separate; overrides can still pin them.
 function invoicePaymentEvent(
   invoiceId: string,
   overrides: Record<string, unknown> = {},
 ) {
+  const suffix = invoiceId.slice(0, 8);
   return {
     kind: "invoice_payment",
     invoice_id: invoiceId,
-    checkout_session_id: "cs_test_1",
-    payment_intent_id: "pi_test_1",
+    checkout_session_id: `cs_test_${suffix}`,
+    payment_intent_id: `pi_test_${suffix}`,
     amount_cents: 500_000,
     currency: "usd",
     method: "card",
