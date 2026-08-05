@@ -207,7 +207,7 @@ export function ContactRelationships({
                   <Flex direction="column" gap="1">
                     <Text size="2">
                       {phrase}
-                      {span}
+                      {span && <span className="num">{span}</span>}
                     </Text>
                     {rel.notes && (
                       <Text size="1" color="gray">

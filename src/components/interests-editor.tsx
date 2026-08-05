@@ -176,7 +176,7 @@ export function InterestsEditor({
       ) : (
         <Flex direction="column" gap="2">
           {interests.map((row) => {
-            const { label } = resolveInterestValue(row);
+            const { kind, label } = resolveInterestValue(row);
             return (
               <Card key={row.id}>
                 <Flex justify="between" align="center" gap="3">
@@ -184,7 +184,7 @@ export function InterestsEditor({
                     <span className="inline-block border border-[var(--rule-2)] px-[7px] py-[2px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink-2)]">
                       {INTEREST_SENTIMENT_LABELS[row.sentiment]}
                     </span>
-                    <Text size="2" weight="medium">
+                    <Text size="2" weight="medium" className={kind === "price_band" ? "num" : undefined}>
                       {label}
                     </Text>
                     <Text size="1" color="gray">

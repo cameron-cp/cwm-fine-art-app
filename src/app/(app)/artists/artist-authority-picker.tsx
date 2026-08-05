@@ -151,7 +151,7 @@ export function ArtistAuthorityPicker({ onResolved }: Props) {
                   borderRadius: 0,
                 }}
               >
-                <Text size="2" weight="medium" as="div">
+                <Text size="2" weight="medium" as="div" className="font-serif">
                   {c.label}
                 </Text>
                 {c.description && (

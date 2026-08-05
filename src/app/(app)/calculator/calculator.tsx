@@ -235,7 +235,7 @@ export function Calculator() {
                 <Table.Cell align="right">
                   {valueNum > 0 && showPerRowFee ? (
                     <Flex direction="column" align="end">
-                      <Text>
+                      <Text className="num">
                         {isSale ? "+" : "−"}
                         {usd.format(rowFee)}
                       </Text>
@@ -338,7 +338,12 @@ function SummaryRow({
   muted?: boolean;
   tone?: "positive" | "negative";
 }) {
-  const color = muted ? "gray" : tone === "positive" ? "green" : tone === "negative" ? "red" : undefined;
+  const toneStyle =
+    tone === "positive"
+      ? { color: "var(--sage)" }
+      : tone === "negative"
+        ? { color: "var(--amber)" }
+        : undefined;
   return (
     <Flex justify="between" align="baseline">
       <Text size={emphasis ? "3" : "2"} color={muted ? "gray" : undefined}>
@@ -347,7 +352,9 @@ function SummaryRow({
       <Text
         size={emphasis ? "5" : "3"}
         weight={emphasis ? "bold" : "medium"}
-        color={color}
+        color={muted ? "gray" : undefined}
+        className="num"
+        style={toneStyle}
       >
         {value}
       </Text>
