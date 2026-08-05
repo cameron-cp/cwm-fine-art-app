@@ -1,6 +1,4 @@
 import { Container, Heading } from "@radix-ui/themes";
-import { Alert } from "@/components/alert";
-import Link from "next/link";
 import { fetchAddressOptions } from "../address-options";
 import { ArtworkForm } from "../artwork-form";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -29,27 +27,19 @@ export default async function NewArtworkPage({
         New artwork
       </Heading>
 
-      {artists.length === 0 ? (
-        <Alert tone="info">
-          Add an{" "}
-          <Link href="/artists/new" className="text-[var(--ink)] underline">
-            artist
-          </Link>{" "}
-          first — every artwork belongs to one.
-        </Alert>
-      ) : (
-        <ArtworkForm
-          artists={artists}
-          hasPrimaryImage={false}
-          mediumSuggestions={mediumSuggestions}
-          addressOptions={addressOptions}
-          defaultArtistId={
-            artistParam && artists.some((a) => a.id === artistParam)
-              ? artistParam
-              : undefined
-          }
-        />
-      )}
+      {/* No artist gate: an empty roster used to bounce her to /artists/new and
+          lose the entry she'd started. The Artist field creates one in place. */}
+      <ArtworkForm
+        artists={artists}
+        hasPrimaryImage={false}
+        mediumSuggestions={mediumSuggestions}
+        addressOptions={addressOptions}
+        defaultArtistId={
+          artistParam && artists.some((a) => a.id === artistParam)
+            ? artistParam
+            : undefined
+        }
+      />
     </Container>
   );
 }
