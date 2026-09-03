@@ -21,6 +21,19 @@ export function paymentMethodTypesFor(
     : ["card"];
 }
 
+// Stripe has no "quarterly" interval — a quarter is month x 3. This is the ONE
+// place that conversion lives: the initial subscription Checkout and any later
+// price swap (a retainer edit) both read it, so a cadence can never come to mean
+// two different things depending on which path created the price.
+export function recurringFor(
+  billingInterval: RetainerInterval,
+): { interval: "month"; interval_count: number } {
+  return {
+    interval: "month",
+    interval_count: billingInterval === "quarter" ? 3 : 1,
+  };
+}
+
 export interface InvoiceCheckoutArgs {
   invoiceId: string;
   invoiceNumber: string; // display, e.g. "CWFA-1001"
@@ -122,10 +135,7 @@ export function buildRetainerCheckoutParams(
         price_data: {
           currency,
           unit_amount: args.amountCents,
-          recurring: {
-            interval: "month",
-            interval_count: args.billingInterval === "quarter" ? 3 : 1,
-          },
+          recurring: recurringFor(args.billingInterval),
           product_data: { name: args.description },
         },
       },
@@ -135,4 +145,65 @@ export function buildRetainerCheckoutParams(
     success_url: `${args.appUrl}/retainers?created=1`,
     cancel_url: `${args.appUrl}/retainers/new`,
   };
+}
+
+export interface RetainerPriceArgs {
+  amountCents: number;
+  currency: string; // stored casing, e.g. "USD"
+  billingInterval: RetainerInterval;
+  description: string;
+}
+
+// A standalone recurring Price, used when EDITING a live retainer. Stripe prices
+// are immutable, so changing what a subscription charges means minting a new
+// price and swapping the subscription item onto it — there is no "update the
+// amount" call. `product_data` lets Stripe create the product inline, so the
+// collector's next Stripe invoice reads with her current description rather than
+// the one from whenever the retainer started.
+export function buildRetainerPriceParams(
+  args: RetainerPriceArgs,
+): Stripe.PriceCreateParams {
+  return {
+    currency: args.currency.toLowerCase(),
+    unit_amount: args.amountCents,
+    recurring: recurringFor(args.billingInterval),
+    product_data: { name: args.description },
+  };
+}
+
+// Deep link to a Stripe object in the dashboard. Test-mode and sandbox objects
+// live under a /test/ segment and 404 without it, so the mode has to be threaded
+// in rather than guessed — callers read it from the secret-key prefix
+// (isStripeLiveMode), which is the only thing that actually knows.
+export function buildDashboardUrl(
+  resource: "customers" | "subscriptions",
+  id: string,
+  livemode: boolean,
+): string {
+  const base = "https://dashboard.stripe.com";
+  return livemode ? `${base}/${resource}/${id}` : `${base}/test/${resource}/${id}`;
+}
+
+export interface CustomerFields {
+  name: string;
+  email: string | null;
+}
+
+// Diff the app's contact against the Stripe Customer, returning ONLY the changed
+// fields — or null when nothing differs, so a no-op contact save never makes a
+// Stripe request.
+//
+// Absent is not the same as cleared: a null local email leaves Stripe's email
+// alone rather than blanking it. The collector may have given Stripe an address
+// directly at Checkout that she never typed into the app, and a receipt address
+// is the one field a subscription cannot lose — losing it silently breaks
+// billing email for a live retainer.
+export function diffCustomerFields(
+  local: CustomerFields,
+  remote: CustomerFields,
+): Stripe.CustomerUpdateParams | null {
+  const params: Stripe.CustomerUpdateParams = {};
+  if (local.name && local.name !== remote.name) params.name = local.name;
+  if (local.email && local.email !== remote.email) params.email = local.email;
+  return Object.keys(params).length > 0 ? params : null;
 }

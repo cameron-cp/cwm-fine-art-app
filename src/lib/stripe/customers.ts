@@ -1,5 +1,5 @@
 import { getStripe } from "./client";
-import { buildSetupCheckoutParams } from "./params";
+import { buildSetupCheckoutParams, diffCustomerFields } from "./params";
 import { requestOptionsFor, type StripeAccountContext } from "./context";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { Party } from "@/lib/schemas/party";
@@ -49,6 +49,52 @@ export async function ensureStripeCustomer(
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to create customer.",
+    };
+  }
+}
+
+// Push app-side contact edits (name, email) onto the existing Stripe Customer so
+// the two stop drifting: her receipts, Billing Portal, and Stripe dashboard all
+// read the name she just typed.
+//
+// Never fatal to the caller. A contact save is the dealer's record-keeping and
+// must not be held hostage to Stripe being reachable — `updateParty` reports the
+// sync failure as a warning and keeps the local write. Returns synced:false for
+// the ordinary no-op cases (no customer yet, nothing changed, customer deleted
+// at Stripe) so only real failures surface as errors.
+export async function syncStripeCustomer(
+  party: Pick<Party, "display_name" | "email" | "stripe_customer_id">,
+  ctx: StripeAccountContext,
+): Promise<Result<{ synced: boolean }>> {
+  if (!party.stripe_customer_id) return { data: { synced: false } };
+
+  const stripe = getStripe();
+  if (!stripe) return { error: "Stripe is not configured." };
+
+  try {
+    const options = requestOptionsFor(ctx);
+    const remote = await stripe.customers.retrieve(
+      party.stripe_customer_id,
+      undefined,
+      options,
+    );
+    // A customer deleted in the Stripe dashboard still leaves its id on our
+    // row. Nothing to sync onto, and re-creating one here would be a surprise
+    // side effect of renaming a contact.
+    if (remote.deleted) return { data: { synced: false } };
+
+    const changes = diffCustomerFields(
+      { name: party.display_name, email: party.email },
+      { name: remote.name ?? "", email: remote.email ?? null },
+    );
+    if (!changes) return { data: { synced: false } };
+
+    await stripe.customers.update(party.stripe_customer_id, changes, options);
+    return { data: { synced: true } };
+  } catch (err) {
+    return {
+      error:
+        err instanceof Error ? err.message : "Failed to update Stripe customer.",
     };
   }
 }

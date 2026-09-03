@@ -7,8 +7,10 @@ import {
   InvoicePaymentActions,
   InvoicePaymentBadge,
 } from "@/components/invoice-payment-actions";
+import { InvoicePaymentDetails } from "@/components/invoice-payment-details";
 import { formatInvoiceMoney } from "@/lib/money";
 import type { Invoice, InvoiceLineItem } from "@/lib/schemas/invoice";
+import type { InvoicePayment } from "@/lib/schemas/stripe";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export default async function InvoiceDetailPage({
@@ -33,6 +35,15 @@ export default async function InvoiceDetailPage({
     .eq("invoice_id", id)
     .order("position");
   const items = (itemRows ?? []) as InvoiceLineItem[];
+
+  // Newest attempt first: the last thing that happened is the thing she's
+  // looking for when she opens the invoice to check on a payment.
+  const { data: paymentRows } = await supabase
+    .from("invoice_payments")
+    .select("*")
+    .eq("invoice_id", id)
+    .order("created_at", { ascending: false });
+  const payments = (paymentRows ?? []) as InvoicePayment[];
 
   const number = `${invoice.invoice_prefix}${invoice.invoice_number}`;
   const money = (c: number | null | undefined) => formatInvoiceMoney(c, invoice.currency);
@@ -67,6 +78,15 @@ export default async function InvoiceDetailPage({
       <Flex justify="end" mb="4">
         <InvoicePaymentActions id={id} status={invoice.payment_status} />
       </Flex>
+
+      <InvoicePaymentDetails
+        status={invoice.payment_status}
+        paidAt={invoice.paid_at ?? null}
+        amountPaidCents={invoice.amount_paid_cents ?? 0}
+        totalCents={invoice.total_cents}
+        currency={invoice.currency}
+        payments={payments}
+      />
 
       <Card mb="4">
         <Flex direction="column" gap="1">

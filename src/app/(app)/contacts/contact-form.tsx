@@ -83,6 +83,7 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [stripeWarning, setStripeWarning] = useState<string | null>(null);
 
   const {
     register,
@@ -135,6 +136,18 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
         setError(result.error);
         return;
       }
+      // The contact saved, but pushing the change onto its Stripe Customer
+      // failed. Stay on the form and say so rather than navigating away — she
+      // is the only person who can decide whether Stripe now disagrees in a way
+      // that matters (a live retainer's receipt email, say).
+      // Only updateParty carries this field; createParty's data has no Stripe
+      // customer to sync yet, hence the widened read.
+      const warning = (result.data as { stripeWarning?: string }).stripeWarning;
+      if (warning) {
+        setError(null);
+        setStripeWarning(warning);
+        return;
+      }
       router.push(party ? `/contacts/${party.id}` : "/contacts");
       router.refresh();
     });
@@ -161,6 +174,8 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
         {error && (
           <Alert tone="error">{error}</Alert>
         )}
+
+        {stripeWarning && <Alert tone="warning">{stripeWarning}</Alert>}
 
         <Field label="Type">
           <Controller

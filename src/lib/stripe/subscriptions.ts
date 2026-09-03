@@ -1,7 +1,8 @@
 import { getStripe } from "./client";
-import { buildRetainerCheckoutParams } from "./params";
+import { buildRetainerCheckoutParams, buildRetainerPriceParams } from "./params";
 import { ensureStripeCustomer } from "./customers";
 import { requestOptionsFor, type StripeAccountContext } from "./context";
+import { subscriptionFacts, type SubscriptionFacts } from "./stripe-fields";
 import type { Party } from "@/lib/schemas/party";
 import type { Retainer, RetainerInterval } from "@/lib/schemas/stripe";
 
@@ -43,6 +44,74 @@ export async function createRetainerCheckoutSession(args: {
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to create retainer.",
+    };
+  }
+}
+
+// Change what a live retainer charges. Stripe prices are immutable, so this
+// mints a fresh price and swaps the subscription's single item onto it.
+//
+// proration_behavior: "none" is deliberate. A retainer is a standing fee, not
+// metered usage: raising it mid-period should not fire an immediate catch-up
+// charge at the collector, and lowering it should not hand back a credit she
+// never agreed to. The new amount takes effect on the next cycle, which is what
+// "we're moving you to $3k a month" means to both parties. The subscription
+// metadata is rewritten in the same call so a later webhook rebuilding the
+// mirror from metadata sees the current figures, not the original ones.
+export async function updateRetainerSubscription(args: {
+  subscriptionId: string;
+  amountCents: number;
+  currency: string;
+  billingInterval: RetainerInterval;
+  description: string;
+  ctx: StripeAccountContext;
+}): Promise<Result<SubscriptionFacts>> {
+  const stripe = getStripe();
+  if (!stripe) return { error: "Stripe is not configured." };
+
+  try {
+    const options = requestOptionsFor(args.ctx);
+    const current = await stripe.subscriptions.retrieve(
+      args.subscriptionId,
+      undefined,
+      options,
+    );
+    const itemId = current.items.data[0]?.id;
+    if (!itemId) {
+      return { error: "That Stripe subscription has no billable item." };
+    }
+
+    const price = await stripe.prices.create(
+      buildRetainerPriceParams({
+        amountCents: args.amountCents,
+        currency: args.currency,
+        billingInterval: args.billingInterval,
+        description: args.description,
+      }),
+      options,
+    );
+
+    const updated = await stripe.subscriptions.update(
+      args.subscriptionId,
+      {
+        items: [{ id: itemId, price: price.id }],
+        proration_behavior: "none",
+        metadata: {
+          ...(current.metadata ?? {}),
+          amount_cents: String(args.amountCents),
+          interval: args.billingInterval,
+          description: args.description,
+          currency: args.currency.toLowerCase(),
+        },
+        expand: ["items.data.price"],
+      },
+      options,
+    );
+
+    return { data: subscriptionFacts(updated) };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to update retainer.",
     };
   }
 }

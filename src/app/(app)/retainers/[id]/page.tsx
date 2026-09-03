@@ -1,5 +1,8 @@
-import { Card, Container, Flex, Heading, Separator, Table, Text } from "@radix-ui/themes";
+import { Button, Card, Container, Flex, Heading, Link, Separator, Table, Text } from "@radix-ui/themes";
+import NextLink from "next/link";
 import { notFound } from "next/navigation";
+import { isStripeLiveMode } from "@/lib/stripe/client";
+import { buildDashboardUrl } from "@/lib/stripe/params";
 import { Th } from "@/components/ledger";
 import { RetainerActions } from "@/components/retainer-actions";
 import { StatusTag, toneFromColor } from "@/components/status-tag";
@@ -67,6 +70,11 @@ export default async function RetainerDetailPage({
             {retainer.description ?? "Retainer"}
           </Text>
         </div>
+        {retainer.status !== "canceled" && (
+          <Button asChild variant="soft">
+            <NextLink href={`/retainers/${id}/edit`}>Edit</NextLink>
+          </Button>
+        )}
       </Flex>
 
       <Card mb="4">
@@ -85,6 +93,24 @@ export default async function RetainerDetailPage({
                 : "—"}
             </span>
           </Text>
+          {retainer.stripe_subscription_id && (
+            <Text size="2" color="gray">
+              Stripe:{" "}
+              <Link
+                href={buildDashboardUrl(
+                  "subscriptions",
+                  retainer.stripe_subscription_id,
+                  isStripeLiveMode(),
+                )}
+                target="_blank"
+                rel="noreferrer"
+                size="2"
+                className="num"
+              >
+                {retainer.stripe_subscription_id} ↗
+              </Link>
+            </Text>
+          )}
         </Flex>
       </Card>
 
