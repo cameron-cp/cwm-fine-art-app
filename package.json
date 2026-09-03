@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "doppler run -- next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "crm": "tsx scripts/crm.ts",
+    "crm": "doppler run -- tsx scripts/crm.ts",
     "test": "vitest run"
   },
   "dependencies": {
