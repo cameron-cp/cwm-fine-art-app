@@ -2,6 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getStripe } from "@/lib/stripe/client";
 import { PLATFORM_CONTEXT } from "@/lib/stripe/context";
 import { syncStripeCustomer } from "@/lib/stripe/customers";
+import { buildCustomerCreateParams } from "@/lib/stripe/params";
+import { resolveReceiptEmail } from "@/lib/stripe/receipt-email";
 import { updateRetainerSubscription } from "@/lib/stripe/subscriptions";
 
 // Integration tests for the two seams that reach into a LIVE Stripe account:
@@ -27,6 +29,7 @@ d("Stripe sandbox seams", () => {
   const ctx = PLATFORM_CONTEXT;
   let customerId = "";
   let subscriptionId = "";
+  let companyCustomerId = "";
 
   beforeAll(async () => {
     const customer = await stripe.customers.create({
@@ -73,6 +76,9 @@ d("Stripe sandbox seams", () => {
     if (customerId) {
       await stripe.customers.del(customerId).catch(() => {});
     }
+    if (companyCustomerId) {
+      await stripe.customers.del(companyCustomerId).catch(() => {});
+    }
   }, 60_000);
 
   it("pushes a contact rename onto the Stripe Customer", async () => {
@@ -109,6 +115,55 @@ d("Stripe sandbox seams", () => {
     );
     expect(result).toEqual({ data: { synced: false } });
   }, 30_000);
+
+  it("bills a company payer at the attention contact's address", async () => {
+    // The dealer's case: Detroit Design District has no inbox, Amelia does.
+    // Asserted against what Stripe stores, because this is the pairing that
+    // decides whether a company's receipts arrive at all.
+    const receipt = resolveReceiptEmail(
+      { email: null },
+      { email: "amelia-fixture@example.com" },
+    );
+    expect(receipt).toEqual({
+      email: "amelia-fixture@example.com",
+      source: "attention",
+    });
+
+    const company = await stripe.customers.create(
+      buildCustomerCreateParams({
+        partyId: "33333333-3333-4333-8333-333333333333",
+        displayName: "Detroit Design District",
+        email: receipt!.email,
+      }),
+    );
+    companyCustomerId = company.id;
+
+    const remote = await stripe.customers.retrieve(company.id);
+    expect(remote.deleted).toBeFalsy();
+    if (!remote.deleted) {
+      expect(remote.name).toBe("Detroit Design District");
+      expect(remote.email).toBe("amelia-fixture@example.com");
+      expect(remote.metadata?.party_id).toBe(
+        "33333333-3333-4333-8333-333333333333",
+      );
+    }
+
+    // And a later edit of the company contact — which still has no email —
+    // must not blank Amelia's address back off it.
+    const synced = await syncStripeCustomer(
+      {
+        display_name: "Detroit Design District",
+        email: null,
+        stripe_customer_id: company.id,
+      },
+      ctx,
+    );
+    expect(synced).toEqual({ data: { synced: false } });
+    const after = await stripe.customers.retrieve(company.id);
+    if (!after.deleted) {
+      expect(after.email).toBe("amelia-fixture@example.com");
+    }
+  }, 60_000);
 
   it("swaps a live subscription onto a new amount and cadence", async () => {
     // $2,500/month -> $3,000/quarter. Asserts against what Stripe reports back,

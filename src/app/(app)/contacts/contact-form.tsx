@@ -38,7 +38,20 @@ import {
 } from "@/lib/schemas/party";
 import { createParty, deleteParty, updateParty } from "./actions";
 
-type Props = { party?: Party; roles?: PartyRole[]; addresses?: PartyAddressRow[] };
+type Props = {
+  party?: Party;
+  roles?: PartyRole[];
+  addresses?: PartyAddressRow[];
+  // Inline mode (a picker's create-contact overlay): hand the new contact back
+  // to the host form instead of navigating to /contacts, and let the host close
+  // the dialog. Mirrors ArtistForm's contract — see artworks/artist-picker.tsx.
+  onCreated?: (party: {
+    id: string;
+    display_name: string;
+    email: string | null;
+  }) => void;
+  onCancel?: () => void;
+};
 
 const NONE = "__none__";
 
@@ -79,7 +92,13 @@ const emptyAddress = (): NonNullable<PartyFormInput["addresses"]>[number] => ({
   is_primary: false,
 });
 
-export function ContactForm({ party, roles = [], addresses = [] }: Props) {
+export function ContactForm({
+  party,
+  roles = [],
+  addresses = [],
+  onCreated,
+  onCancel,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -146,6 +165,18 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
       if (warning) {
         setError(null);
         setStripeWarning(warning);
+        return;
+      }
+
+      // Inline mode: hand the contact back to the picker that opened us. No
+      // router.push, because navigating would destroy the retainer or invoice
+      // she is halfway through entering — the whole reason this path exists.
+      if (onCreated && !party) {
+        onCreated({
+          id: result.data.id,
+          display_name: values.display_name,
+          email: values.email ?? null,
+        });
         return;
       }
       router.push(party ? `/contacts/${party.id}` : "/contacts");
@@ -479,7 +510,12 @@ export function ContactForm({ party, roles = [], addresses = [] }: Props) {
             <Button type="submit" loading={pending}>
               {party ? "Save changes" : "Create contact"}
             </Button>
-            <Button type="button" variant="soft" color="gray" onClick={() => router.back()}>
+            <Button
+              type="button"
+              variant="soft"
+              color="gray"
+              onClick={() => (onCancel ? onCancel() : router.back())}
+            >
               Cancel
             </Button>
           </Flex>

@@ -1,6 +1,7 @@
 import { Button, Card, Container, Flex, Heading, Link, Separator, Table, Text } from "@radix-ui/themes";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
+import { RetainerAttention } from "@/components/retainer-attention";
 import { isStripeLiveMode } from "@/lib/stripe/client";
 import { buildDashboardUrl } from "@/lib/stripe/params";
 import { Th } from "@/components/ledger";
@@ -37,12 +38,15 @@ export default async function RetainerDetailPage({
 
   const { data: retainerRow } = await supabase
     .from("retainers")
-    .select("*, party:parties(display_name)")
+    .select(
+      "*, party:parties!retainers_party_id_fkey(display_name), attention:parties!retainers_attention_party_id_fkey(id, display_name, email)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!retainerRow) notFound();
   const retainer = retainerRow as Retainer & {
     party: { display_name: string } | null;
+    attention: { id: string; display_name: string; email: string | null } | null;
   };
 
   const { data: paymentRows } = await supabase
@@ -66,9 +70,10 @@ export default async function RetainerDetailPage({
               {retainer.status.replace(/_/g, " ")}
             </StatusTag>
           </Flex>
-          <Text color="gray" size="2">
+          <Text color="gray" size="2" as="p">
             {retainer.description ?? "Retainer"}
           </Text>
+          <RetainerAttention attention={retainer.attention} />
         </div>
         {retainer.status !== "canceled" && (
           <Button asChild variant="soft">

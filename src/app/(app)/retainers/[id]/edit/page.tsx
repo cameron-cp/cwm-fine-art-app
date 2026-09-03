@@ -14,7 +14,10 @@ export default async function EditRetainerPage({
 
   const { data: row } = await supabase
     .from("retainers")
-    .select("*, party:parties(display_name)")
+    // The FK hint is required, not stylistic: 0024 added a second FK from
+    // retainers to parties, so a bare `parties(...)` embed is ambiguous and
+    // PostgREST rejects it with PGRST201.
+    .select("*, party:parties!retainers_party_id_fkey(display_name)")
     .eq("id", id)
     .maybeSingle();
   if (!row) notFound();
