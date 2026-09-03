@@ -4,8 +4,16 @@ import { getServerEnv } from "@/lib/env";
 // Lazy singleton, mirroring the Resend seam (getResendClient): no key → no
 // client, and callers turn that into a clean { error } rather than throwing at
 // import time. So the whole payments feature runs "dark" until STRIPE_SECRET_KEY
-// is set. apiVersion is pinned to the version this SDK ships against, so event
-// shapes stay stable regardless of the account's dashboard setting.
+// is set.
+//
+// apiVersion is pinned so shapes cannot shift under us on a dashboard change,
+// and it is pinned to the ACCOUNT's version rather than the SDK's default.
+// Webhook events are rendered in the account's version, so a lower pin meant the
+// SDK types described one shape while the endpoint received another — the drift
+// the `invoice.parent.subscription_details` fallback in stripe-fields.ts already
+// absorbs one instance of. Matching the account removes the class instead of
+// patching cases. `stripe listen` prints the account's version if this needs
+// re-checking; bump both together.
 //
 // The pure request builders live in ./params (no env), so they can be
 // unit-tested without a key; this module is the only one that reads the secret.
@@ -25,7 +33,7 @@ export function getStripe(): Stripe | null {
   if (!STRIPE_SECRET_KEY) return null;
   if (!client) {
     client = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2026-06-24.dahlia",
+      apiVersion: "2026-08-26.dahlia",
     });
   }
   return client;
