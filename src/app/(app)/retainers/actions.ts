@@ -14,6 +14,7 @@ import {
   planRetainerEdit,
   type RetainerEditMode,
 } from "@/lib/stripe/retainer-edit";
+import { resolveReceiptEmail } from "@/lib/stripe/receipt-email";
 import {
   cancelRetainerSubscription,
   createRetainerCheckoutSession,
@@ -52,13 +53,39 @@ export async function createRetainer(
     Party,
     "id" | "display_name" | "email" | "stripe_customer_id"
   >;
-  // Stripe requires an email for subscription receipts.
-  if (!party.email) {
-    return { error: "Add an email to this contact before starting a retainer." };
+
+  // A company payer often has no inbox on file while the person she deals with
+  // does, so the receipt address can come from either — see
+  // src/lib/stripe/receipt-email.ts for the precedence and why.
+  let attention: Pick<Party, "id" | "display_name" | "email"> | null = null;
+  if (data.attention_party_id) {
+    if (data.attention_party_id === data.party_id) {
+      return { error: "The attention contact must be someone other than the payer." };
+    }
+    const { data: attentionRow } = await supabase
+      .from("parties")
+      .select("id, display_name, email")
+      .eq("id", data.attention_party_id)
+      .maybeSingle();
+    if (!attentionRow) return { error: "Attention contact not found." };
+    attention = attentionRow as Pick<Party, "id" | "display_name" | "email">;
+  }
+
+  const receipt = resolveReceiptEmail(party, attention);
+  if (!receipt) {
+    return {
+      error: attention
+        ? "Neither the payer nor the attention contact has an email, and Stripe needs one for receipts."
+        : "Add an email to this contact, or name an attention contact who has one.",
+    };
   }
 
   const session = await createRetainerCheckoutSession({
-    party,
+    // The Stripe Customer keeps the PAYER's name — their accounting needs the
+    // company on the receipt — while the email is whichever address will
+    // actually be read. diffCustomerFields treats a null local email as "leave
+    // alone", so a later edit of the company contact cannot blank this back out.
+    party: { ...party, email: receipt.email },
     amountCents: data.amount_cents,
     currency: data.currency,
     billingInterval: data.billing_interval,
@@ -77,6 +104,7 @@ export async function createRetainer(
     .eq("status", "incomplete");
   await supabase.from("retainers").insert({
     party_id: party.id,
+    attention_party_id: attention?.id ?? null,
     stripe_checkout_session_id: session.data.id,
     description: data.description,
     amount_cents: data.amount_cents,
@@ -164,6 +192,39 @@ export async function updateRetainer(
   revalidatePath("/retainers");
   revalidatePath(`/retainers/${id}`);
   return { data: { id, mode: plan.mode } };
+}
+
+// Change (or clear) who the retainer is addressed to. Deliberately its own
+// action rather than a field on updateRetainer: this touches nobody's money, so
+// it must never mint a Stripe price or run the edit planner. Passing null clears
+// the attention line.
+export async function setRetainerAttention(
+  id: string,
+  attentionPartyId: string | null,
+): Promise<Result<{ id: string }>> {
+  const supabase = getSupabaseServer();
+  const { data: row } = await supabase
+    .from("retainers")
+    .select("id, party_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!row) return { error: "Retainer not found." };
+
+  // Pre-check the 0024 CHECK so she gets a sentence instead of a raw constraint
+  // violation (the deleteParty / addInterest convention).
+  if (attentionPartyId && attentionPartyId === (row as { party_id: string }).party_id) {
+    return { error: "The attention contact must be someone other than the payer." };
+  }
+
+  const { error } = await supabase
+    .from("retainers")
+    .update({ attention_party_id: attentionPartyId })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/retainers");
+  revalidatePath(`/retainers/${id}`);
+  return { data: { id } };
 }
 
 // Cancel a retainer. If it never activated (no subscription id), just mark the

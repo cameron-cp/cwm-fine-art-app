@@ -21,6 +21,11 @@ export type RetainerStatus = RetainerStatusInput;
 // enforces that the party has an email (Stripe receipts).
 export const retainerCreateSchema = z.object({
   party_id: z.string().uuid("Choose a contact"),
+  // The person she deals with, when the payer is a company: Detroit Design
+  // District pays, Amelia Patt-Zamir is on the thread. Optional — the common
+  // retainer is one person paying for themselves. A DB CHECK (0024) enforces
+  // that this is not the payer itself.
+  attention_party_id: z.string().uuid().nullish(),
   amount_cents: requiredPriceCents,
   billing_interval: retainerInterval,
   description: z.string().trim().min(1, "Add a short description"),
@@ -36,6 +41,11 @@ export type RetainerCreateFormInput = z.input<typeof retainerCreateSchema>;
 // party here could only ever contradict the row.
 export const retainerUpdateSchema = retainerCreateSchema.omit({
   party_id: true,
+  // The attention contact IS editable, but through its own action: changing it
+  // is a local-only correction that must never mint a Stripe price, and
+  // planRetainerEdit's three-way decision is about money, not about who to
+  // email. Folding it in here would make a name fix look like a price change.
+  attention_party_id: true,
 });
 
 export type RetainerUpdateInput = z.output<typeof retainerUpdateSchema>;
@@ -59,6 +69,7 @@ export type InvoicePayment = {
 export type Retainer = {
   id: string;
   party_id: string;
+  attention_party_id: string | null;
   stripe_checkout_session_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;

@@ -4,17 +4,22 @@ import {
   Button,
   Flex,
   Select,
+  Text,
   TextArea,
   TextField,
 } from "@radix-ui/themes";
 import { Alert } from "@/components/alert";
 import { Field } from "@/components/field";
+import {
+  mergePartyOptions,
+  PartyPicker,
+  type PartyOption,
+} from "@/components/party-picker";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import { createRetainer, updateRetainer } from "./actions";
 import type { RetainerInterval } from "@/lib/schemas/stripe";
-
-type PartyOption = { id: string; display_name: string; email: string | null };
 
 /** The subset of an existing retainer this form edits. */
 export type RetainerEditable = {
@@ -45,6 +50,7 @@ export function RetainerForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [partyId, setPartyId] = useState<string>("");
+  const [attentionId, setAttentionId] = useState<string>("");
   const [amount, setAmount] = useState<string>(
     retainer?.amount_cents != null ? (retainer.amount_cents / 100).toFixed(2) : "",
   );
@@ -55,7 +61,25 @@ export function RetainerForm({
     retainer?.description ?? "",
   );
 
-  const selectedParty = parties.find((p) => p.id === partyId);
+  // Contacts created in the overlay during this session, merged into the list
+  // the server rendered so the new one is immediately selectable.
+  const [created, setCreated] = useState<PartyOption[]>([]);
+  const options = mergePartyOptions(parties, created);
+  const selectedParty = options.find((p) => p.id === partyId);
+  const selectedAttention = options.find((p) => p.id === attentionId);
+
+  function addCreated(party: PartyOption) {
+    // flushSync, not a plain setState: selecting the new contact in the SAME
+    // commit that first renders its <Select.Item> loses a race with Radix's item
+    // registration — it sees an unmatched value, clears it, and the field
+    // silently drops back to "Select payer…". Forcing the option list to commit
+    // first means the item exists by the time the value changes.
+    flushSync(() => setCreated((prev) => [...prev, party]));
+    // Fill whichever field is still empty: the payer first, since that is the
+    // required one and the reason she opened the overlay in the common case.
+    if (!partyId) setPartyId(party.id);
+    else if (!attentionId) setAttentionId(party.id);
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,11 +87,16 @@ export function RetainerForm({
 
     if (!editing) {
       if (!partyId) {
-        setError("Choose a contact.");
+        setError("Choose who pays.");
         return;
       }
-      if (selectedParty && !selectedParty.email) {
-        setError("That contact needs an email before starting a retainer.");
+      // Stripe needs one readable address for receipts. The payer's own wins;
+      // an attention contact's covers the company-with-no-inbox case. The
+      // server re-checks this with the same rule (resolveReceiptEmail).
+      if (!selectedParty?.email && !selectedAttention?.email) {
+        setError(
+          "Stripe needs an email for receipts. Add one to the payer, or name an attention contact who has one.",
+        );
         return;
       }
     }
@@ -97,6 +126,7 @@ export function RetainerForm({
 
       const res = await createRetainer({
         party_id: partyId,
+        attention_party_id: attentionId || null,
         amount_cents,
         billing_interval: interval,
         description,
@@ -114,19 +144,36 @@ export function RetainerForm({
     <form onSubmit={submit}>
       <Flex direction="column" gap="4" maxWidth="480px">
         {!editing && (
-          <Field label="Contact">
-            <Select.Root value={partyId} onValueChange={setPartyId}>
-              <Select.Trigger placeholder="Choose a contact" style={{ width: "100%" }} />
-              <Select.Content>
-                {parties.map((p) => (
-                  <Select.Item key={p.id} value={p.id}>
-                    {p.display_name}
-                    {p.email ? "" : " (no email)"}
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Root>
-          </Field>
+          <>
+            <Field label="Who pays">
+              <PartyPicker
+                parties={options}
+                value={partyId}
+                onChange={setPartyId}
+                onCreated={addCreated}
+                label="payer"
+                ariaLabel="Who pays"
+              />
+            </Field>
+
+            <Field label="Attention (optional)">
+              <PartyPicker
+                parties={options}
+                value={attentionId}
+                onChange={setAttentionId}
+                onCreated={addCreated}
+                label="contact"
+                ariaLabel="Attention contact"
+                clearable
+                excludeId={partyId || null}
+              />
+              <Text size="1" color="gray" mt="1" as="p">
+                For a company payer — the person you deal with. Receipts go to
+                the payer&rsquo;s email, or to this contact&rsquo;s if the payer
+                has none.
+              </Text>
+            </Field>
+          </>
         )}
 
         <Field label="Amount (USD per charge)">

@@ -15,6 +15,7 @@ type Row = {
   status: RetainerStatus;
   current_period_end: string | null;
   party: { display_name: string } | null;
+  attention: { display_name: string } | null;
 };
 
 const STATUS_COLOR: Record<RetainerStatus, "green" | "amber" | "red" | "gray"> = {
@@ -34,7 +35,7 @@ export default async function RetainersPage() {
   const { data } = await supabase
     .from("retainers")
     .select(
-      "id, description, amount_cents, currency, billing_interval, status, current_period_end, party:parties(display_name)",
+      "id, description, amount_cents, currency, billing_interval, status, current_period_end, party:parties!retainers_party_id_fkey(display_name), attention:parties!retainers_attention_party_id_fkey(display_name)",
     )
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as unknown as Row[];
@@ -86,6 +87,13 @@ export default async function RetainersPage() {
                   >
                     {r.party?.display_name ?? "—"}
                   </Link>
+                  {/* Who she actually deals with, when the payer is a company —
+                      so the list is scannable by the name she remembers. */}
+                  {r.attention && (
+                    <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)]">
+                      attn: {r.attention.display_name}
+                    </div>
+                  )}
                 </Table.Cell>
                 <Table.Cell>
                   <span className="text-[var(--ink-2)]">{r.description ?? "—"}</span>

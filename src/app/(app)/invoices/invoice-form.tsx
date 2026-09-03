@@ -13,9 +13,14 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { Alert } from "@/components/alert";
+import {
+  mergePartyOptions,
+  PartyPicker,
+} from "@/components/party-picker";
 import { Field } from "@/components/field";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { formatAddress } from "@/lib/address";
 import { countryName } from "@/lib/countries";
@@ -111,6 +116,15 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [mismatch, setMismatch] = useState<Record<number, string>>({});
+
+  // Contacts created in the buyer overlay this session. A brand-new contact has
+  // no saved addresses yet, so it joins the list with an empty set — the
+  // bill-to address stays typed by hand, which is what she'd do anyway.
+  const [createdParties, setCreatedParties] = useState<PartyOption[]>([]);
+  const partyOptions = mergePartyOptions(
+    parties,
+    createdParties,
+  ) as PartyOption[];
   // Addresses for the currently-selected buyer, so the bill-to picker can offer
   // the residence / office / freeport etc. (collectors hold works in many places).
   const [buyerAddresses, setBuyerAddresses] = useState<PartyAddressOption[]>(
@@ -163,10 +177,12 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
     return { subtotal, shipping, total: subtotal + shipping };
   }, [watchedLines, watchedShipping]);
 
-  function onBuyerChange(id: string) {
-    const partyId = id === NONE ? null : id;
-    setValue("buyer_party_id", partyId);
-    const party = parties.find((p) => p.id === partyId);
+  // Takes the contact itself, not an id to look up. A contact created in the
+  // overlay is not in `partyOptions` as this handler's closure saw it, so a
+  // lookup returned undefined and the bill-to snapshot silently stayed blank —
+  // leaving her to retype the name she had just entered into the dialog.
+  function applyBuyer(party: PartyOption | null) {
+    setValue("buyer_party_id", party?.id ?? null);
     setBuyerAddresses(party?.addresses ?? []);
     if (party) {
       // Prefill bill-to snapshot (editable afterward).
@@ -177,6 +193,13 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
       const primary = party.addresses[0];
       if (primary) setValue("bill_to_address", formatAddress(primary));
     }
+  }
+
+  function onBuyerChange(id: string) {
+    const partyId = id === NONE ? null : id;
+    applyBuyer(
+      partyId ? (partyOptions.find((p) => p.id === partyId) ?? null) : null,
+    );
   }
 
   // Short one-line description for the address picker options.
@@ -256,17 +279,28 @@ export function InvoiceForm({ artworks, parties, invoice }: Props) {
             control={control}
             name="buyer_party_id"
             render={({ field }) => (
-              <Select.Root value={(field.value as string | null) ?? NONE} onValueChange={onBuyerChange}>
-                <Select.Trigger placeholder="Select a contact (optional)" />
-                <Select.Content>
-                  <Select.Item value={NONE}>None</Select.Item>
-                  {parties.map((p) => (
-                    <Select.Item key={p.id} value={p.id}>
-                      {p.display_name}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
+              <PartyPicker
+                parties={partyOptions}
+                value={(field.value as string | null) ?? ""}
+                onChange={(id) => onBuyerChange(id === "" ? NONE : id)}
+                onCreated={(party) => {
+                  const option: PartyOption = {
+                    ...party,
+                    legal_name: null,
+                    addresses: [],
+                  };
+                  // flushSync so the new <Select.Item> is committed before the
+                  // value changes — Radix clears a value whose item it has not
+                  // registered yet, which would drop the selection.
+                  flushSync(() =>
+                    setCreatedParties((prev) => [...prev, option]),
+                  );
+                  applyBuyer(option);
+                }}
+                label="a contact (optional)"
+                ariaLabel="Buyer contact"
+                clearable
+              />
             )}
           />
         </Field>

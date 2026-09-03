@@ -184,6 +184,29 @@ export function buildDashboardUrl(
   return livemode ? `${base}/${resource}/${id}` : `${base}/test/${resource}/${id}`;
 }
 
+export interface CustomerCreateArgs {
+  partyId: string;
+  displayName: string;
+  /** Already resolved — see resolveReceiptEmail. May be the attention contact's. */
+  email: string | null;
+}
+
+// The Stripe Customer for a party. Name and email are deliberately independent:
+// for a company payer the NAME must stay the company (their accounting needs
+// "Detroit Design District" on the receipt) while the EMAIL may belong to the
+// person she deals with, because the company often has no inbox on file. Pure so
+// that pairing is asserted without a key — swapping them would put an
+// individual's name on a company's invoices.
+export function buildCustomerCreateParams(
+  args: CustomerCreateArgs,
+): Stripe.CustomerCreateParams {
+  return {
+    name: args.displayName,
+    ...(args.email ? { email: args.email } : {}),
+    metadata: { party_id: args.partyId },
+  };
+}
+
 export interface CustomerFields {
   name: string;
   email: string | null;

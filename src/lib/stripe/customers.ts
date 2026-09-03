@@ -1,5 +1,9 @@
 import { getStripe } from "./client";
-import { buildSetupCheckoutParams, diffCustomerFields } from "./params";
+import {
+  buildCustomerCreateParams,
+  buildSetupCheckoutParams,
+  diffCustomerFields,
+} from "./params";
 import { requestOptionsFor, type StripeAccountContext } from "./context";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import type { Party } from "@/lib/schemas/party";
@@ -22,11 +26,11 @@ export async function ensureStripeCustomer(
 
   try {
     const customer = await stripe.customers.create(
-      {
-        name: party.display_name,
-        ...(party.email ? { email: party.email } : {}),
-        metadata: { party_id: party.id },
-      },
+      buildCustomerCreateParams({
+        partyId: party.id,
+        displayName: party.display_name,
+        email: party.email,
+      }),
       requestOptionsFor(ctx),
     );
 
