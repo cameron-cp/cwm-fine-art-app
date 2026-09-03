@@ -1,0 +1,222 @@
+/* Public legal pages — the interface as exhibition wall, applied to a document.
+   These are the app's only indexable public surface, so they read like the
+   advisory's own collateral rather than a boilerplate policy page: plaster, serif
+   headings, hairline rules, a single restrained page-load reveal. Tokens come
+   from globals.css (these routes sit under the root layout).
+   Spec: docs/design/design-system.md */
+
+.lg-shell {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  padding: clamp(28px, 6vw, 72px) clamp(20px, 6vw, 96px) 96px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.lg-header {
+  animation: lg-reveal 0.7s ease both;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: clamp(24px, 4vw, 40px);
+  margin-bottom: clamp(32px, 6vw, 64px);
+}
+
+.lg-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 20px;
+}
+
+.lg-title {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.1;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.lg-standfirst {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-size: clamp(16px, 2.2vw, 19px);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 62ch;
+  margin: 18px 0 0;
+}
+
+/* "Last updated" is a date — tabular mono, per the type rules. */
+.lg-updated {
+  margin-top: 24px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lg-updated .num {
+  letter-spacing: 0.06em;
+}
+
+.lg-body {
+  animation: lg-reveal 0.7s ease 0.08s both;
+}
+
+.lg-section {
+  padding-top: clamp(28px, 4vw, 44px);
+}
+
+/* The masthead rule already opens the document — don't stack its margin with
+   the first section's own top padding. */
+.lg-section:first-child {
+  padding-top: 0;
+}
+
+.lg-section + .lg-section {
+  border-top: 1px solid var(--rule);
+  margin-top: clamp(28px, 4vw, 44px);
+}
+
+.lg-section h2 {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(21px, 3vw, 26px);
+  line-height: 1.2;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+
+.lg-section h3 {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-weight: 600;
+  font-size: 18px;
+  margin: 26px 0 10px;
+}
+
+.lg-section p,
+.lg-section li {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.lg-section p {
+  margin: 0 0 14px;
+}
+
+.lg-section ul {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.lg-section li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 8px;
+}
+
+.lg-section li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 6px;
+  height: 1px;
+  background: var(--rule-2);
+}
+
+.lg-section strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Processor ledger — hairline rows, uppercase letterspaced headers. */
+.lg-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 16px;
+}
+
+.lg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.lg-table th {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0 16px 10px 0;
+  border-bottom: 1px solid var(--rule-2);
+  white-space: nowrap;
+}
+
+.lg-table td {
+  padding: 12px 16px 12px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-2);
+  line-height: 1.5;
+  vertical-align: top;
+}
+
+.lg-table td:first-child {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-size: 17px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.lg-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-2);
+  text-underline-offset: 3px;
+}
+
+.lg-link:hover {
+  color: var(--claret);
+  text-decoration-color: var(--claret);
+}
+
+.lg-footer {
+  margin-top: clamp(56px, 10vw, 110px);
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  align-items: baseline;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lg-footer-name {
+  margin-right: auto;
+}
+
+@keyframes lg-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-header,
+  .lg-body {
+    animation: none;
+  }
+}

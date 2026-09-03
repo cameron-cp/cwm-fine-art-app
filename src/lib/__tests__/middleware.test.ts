@@ -39,4 +39,23 @@ describe("middleware public-route anchoring (the real shipped matcher)", () => {
     // ...whereas our shipped anchored matcher does not:
     expect(isPublicRoute(req("/rooms"))).toBe(false);
   });
+
+  it("makes the legal pages public — they exist for logged-out readers", () => {
+    // These are the app's only indexable public surface. If they fall back under
+    // auth.protect(), Google's OAuth verification reviewer and every collector
+    // sent a link sees a redirect to sign-in instead of the policy.
+    expect(isPublicRoute(req("/privacy"))).toBe(true);
+    expect(isPublicRoute(req("/terms"))).toBe(true);
+  });
+
+  it("does not let the legal patterns widen into dealer routes", () => {
+    // "/terms(.*)" is deliberately un-anchored (there is no /terms* dealer route
+    // to collide with), but "/privacy" is exact — a "/privacy(.*)" would be the
+    // same class of mistake as "/room(.*)" the day a /privacy-settings page for
+    // the dealer gets added. These assertions fail if either widens.
+    expect(isPublicRoute(req("/privacy-settings"))).toBe(false);
+    expect(isPublicRoute(req("/privacy/export"))).toBe(false);
+    expect(isPublicRoute(req("/settings"))).toBe(false);
+    expect(isPublicRoute(req("/artworks"))).toBe(false);
+  });
 });

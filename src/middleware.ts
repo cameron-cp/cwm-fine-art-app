@@ -15,6 +15,12 @@ export const isPublicRoute = createRouteMatcher([
   // docs/decisions/0008-viewing-rooms.md and the middleware.test.ts regression.
   "/room/(.*)", // per-recipient collector room (DB token-gated)
   "/api/room/(.*)", // room event beacon (DB token-gated, revocation re-checked)
+  // Public legal pages (src/app/(legal)). Everything is Clerk-protected by
+  // default, so without these two the pages 404 for logged-out readers — which
+  // is exactly who they exist for (Google OAuth verification, collectors).
+  // "/privacy" is exact on purpose: there is no /privacy/* subtree to expose.
+  "/privacy",
+  "/terms(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
