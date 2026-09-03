@@ -27,9 +27,21 @@ function pythonInverseOf(relation: string, target?: string | null): string | nul
   return out === "" ? null : out;
 }
 
-function pythonAvailable(): boolean {
+// These parity tests need TWO things: a python3 binary AND the vault's
+// _vault_lib.py, which lives outside this repo (~/chloe-second-brain/tools) and
+// exists on Cameron's machine only.
+//
+// Checking for python3 alone was not enough, and the way it failed is worth
+// recording: execFileSync reports a MISSING cwd as "spawnSync python3 ENOENT",
+// which reads exactly like a missing interpreter. So on a CI runner — which has
+// python3 but no vault — the guard passed, the tests ran, and eight of them blew
+// up on what looked like an absent Python. Verify the import, not the binary.
+function vaultLibAvailable(): boolean {
   try {
-    execFileSync("python3", ["--version"], { stdio: "ignore" });
+    execFileSync("python3", ["-c", "import _vault_lib"], {
+      cwd: VAULT_LIB_DIR,
+      stdio: "ignore",
+    });
     return true;
   } catch {
     return false;
@@ -91,7 +103,7 @@ describe("inverseOf", () => {
   });
 });
 
-describe.runIf(pythonAvailable())("parity with _vault_lib.py", () => {
+describe.runIf(vaultLibAvailable())("parity with _vault_lib.py", () => {
   // Eight hand-picked cases including all three section-routed targets, both
   // symmetric directions, and two narrative-only keys that should return null.
   const cases: Array<[string, string | null]> = [
