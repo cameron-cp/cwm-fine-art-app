@@ -10,6 +10,8 @@ import { publicEnv } from "@/lib/env";
 import {
   createBillingPortalSession,
   createSetupCheckoutSession,
+  ensureStripeCustomer,
+  syncStripeCustomer,
 } from "@/lib/stripe/customers";
 import { resolveStripeContext } from "@/lib/stripe/context";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -133,7 +135,7 @@ export async function createParty(input: unknown): Promise<Result<{ id: string }
 export async function updateParty(
   id: string,
   input: unknown,
-): Promise<Result<{ id: string }>> {
+): Promise<Result<{ id: string; stripeWarning?: string }>> {
   const parsed = partySchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid contact" };
@@ -180,9 +182,29 @@ export async function updateParty(
   const addrErr = await syncAddresses(supabase, id, parsed.data.addresses);
   if (addrErr) return addrErr;
 
+  // Push the rename/re-email onto Stripe if this contact is connected. Reported
+  // as a warning, never an error: the local record is already committed above,
+  // and failing the whole save because Stripe was unreachable would make her
+  // lose typing over an integration she isn't currently using.
+  let stripeWarning: string | undefined;
+  const { data: connected } = await supabase
+    .from("parties")
+    .select("display_name, email, stripe_customer_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (connected?.stripe_customer_id) {
+    const synced = await syncStripeCustomer(
+      connected as Pick<Party, "display_name" | "email" | "stripe_customer_id">,
+      await resolveStripeContext(),
+    );
+    if ("error" in synced) {
+      stripeWarning = `Saved here, but Stripe was not updated: ${synced.error}`;
+    }
+  }
+
   revalidatePath("/contacts");
   revalidatePath(`/contacts/${id}`);
-  return { data: { id } };
+  return { data: { id, ...(stripeWarning ? { stripeWarning } : {}) } };
 }
 
 export async function deleteParty(id: string): Promise<Result<{ id: string }>> {
@@ -383,4 +405,25 @@ export async function openBillingPortal(
   });
   if ("error" in result) return { error: result.error };
   return { data: { url: result.data.url } };
+}
+
+// Create the Stripe Customer for this contact up front, without going through a
+// Checkout. Previously a customer only came into being as a side effect of
+// saving a card or starting a retainer, which left the dealer unable to answer
+// "is this collector set up in Stripe?" until she had already tried to charge
+// them. ensureStripeCustomer is idempotent, so a double click is harmless.
+export async function connectStripeCustomer(
+  id: string,
+): Promise<Result<{ stripeCustomerId: string }>> {
+  const party = await loadPaymentParty(id);
+  if ("error" in party) return { error: party.error };
+
+  const result = await ensureStripeCustomer(
+    party.data,
+    await resolveStripeContext(),
+  );
+  if ("error" in result) return { error: result.error };
+
+  revalidatePath(`/contacts/${id}`);
+  return { data: { stripeCustomerId: result.data.id } };
 }

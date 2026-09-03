@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ContactForm } from "../contact-form";
 import { ContactRelationships } from "../contact-relationships";
 import { ContactPaymentMethods } from "@/components/contact-payment-methods";
+import { isStripeLiveMode } from "@/lib/stripe/client";
+import { buildDashboardUrl } from "@/lib/stripe/params";
 import {
   ArtworkLinksEditor,
   type ArtworkLinkView,
@@ -172,6 +174,16 @@ export default async function ContactDetailPage({
         <ContactPaymentMethods
           id={id}
           hasCustomer={Boolean((party as Party).stripe_customer_id)}
+          stripeCustomerId={(party as Party).stripe_customer_id ?? null}
+          dashboardUrl={
+            (party as Party).stripe_customer_id
+              ? buildDashboardUrl(
+                  "customers",
+                  (party as Party).stripe_customer_id as string,
+                  isStripeLiveMode(),
+                )
+              : null
+          }
         />
       )}
 

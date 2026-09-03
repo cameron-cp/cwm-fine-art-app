@@ -2,13 +2,22 @@
 
 import { revalidatePath } from "next/cache";
 import { publicEnv } from "@/lib/env";
-import { retainerCreateSchema } from "@/lib/schemas/stripe";
+import {
+  retainerCreateSchema,
+  retainerUpdateSchema,
+  type Retainer,
+} from "@/lib/schemas/stripe";
 import type { Party } from "@/lib/schemas/party";
 import { getStripe } from "@/lib/stripe/client";
 import { requestOptionsFor, resolveStripeContext } from "@/lib/stripe/context";
 import {
+  planRetainerEdit,
+  type RetainerEditMode,
+} from "@/lib/stripe/retainer-edit";
+import {
   cancelRetainerSubscription,
   createRetainerCheckoutSession,
+  updateRetainerSubscription,
 } from "@/lib/stripe/subscriptions";
 import { idOf, subscriptionFacts } from "@/lib/stripe/stripe-fields";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -78,6 +87,83 @@ export async function createRetainer(
 
   revalidatePath("/retainers");
   return { data: { url: session.data.url } };
+}
+
+// Edit a retainer's amount, cadence, or description. planRetainerEdit decides
+// whether that means a Stripe price swap (live subscription), a local-only
+// correction (checkout never completed), or nothing at all — see
+// src/lib/stripe/retainer-edit.ts for why those are the three cases.
+//
+// Stripe goes first when it is involved: if the price swap fails, the local row
+// must stay as it was, or the app would claim a figure Stripe will never charge.
+export async function updateRetainer(
+  id: string,
+  input: unknown,
+): Promise<Result<{ id: string; mode: RetainerEditMode }>> {
+  const parsed = retainerUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid retainer" };
+  }
+  const next = parsed.data;
+
+  const supabase = getSupabaseServer();
+  const { data: row } = await supabase
+    .from("retainers")
+    .select(
+      "id, status, stripe_subscription_id, amount_cents, billing_interval, description, currency",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!row) return { error: "Retainer not found." };
+  const current = row as Pick<
+    Retainer,
+    | "id"
+    | "status"
+    | "stripe_subscription_id"
+    | "amount_cents"
+    | "billing_interval"
+    | "description"
+    | "currency"
+  >;
+
+  if (current.status === "canceled") {
+    return {
+      error: "This retainer is canceled. Start a new one instead of editing it.",
+    };
+  }
+
+  const plan = planRetainerEdit(current, next);
+  if (plan.mode === "noop") return { data: { id, mode: plan.mode } };
+
+  const update: Record<string, unknown> = {
+    amount_cents: next.amount_cents,
+    billing_interval: next.billing_interval,
+    description: next.description,
+    currency: next.currency,
+  };
+
+  if (plan.mode === "stripe") {
+    const result = await updateRetainerSubscription({
+      subscriptionId: current.stripe_subscription_id as string,
+      amountCents: next.amount_cents,
+      currency: next.currency,
+      billingInterval: next.billing_interval,
+      description: next.description,
+      ctx: await resolveStripeContext(),
+    });
+    if ("error" in result) return { error: result.error };
+    // Mirror what Stripe now reports rather than what we asked for.
+    update.stripe_price_id = result.data.priceId;
+    update.status = result.data.status;
+    update.current_period_end = result.data.currentPeriodEnd;
+  }
+
+  const { error } = await supabase.from("retainers").update(update).eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/retainers");
+  revalidatePath(`/retainers/${id}`);
+  return { data: { id, mode: plan.mode } };
 }
 
 // Cancel a retainer. If it never activated (no subscription id), just mark the

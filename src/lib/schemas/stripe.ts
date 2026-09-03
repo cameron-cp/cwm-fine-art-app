@@ -30,6 +30,17 @@ export const retainerCreateSchema = z.object({
 export type RetainerCreateInput = z.output<typeof retainerCreateSchema>;
 export type RetainerCreateFormInput = z.input<typeof retainerCreateSchema>;
 
+// Edit-retainer form. Same money/cadence fields as create, minus party_id: a
+// retainer's subscriber is fixed once the Stripe subscription exists (moving one
+// to another collector is a cancel + restart, not an edit), so re-submitting a
+// party here could only ever contradict the row.
+export const retainerUpdateSchema = retainerCreateSchema.omit({
+  party_id: true,
+});
+
+export type RetainerUpdateInput = z.output<typeof retainerUpdateSchema>;
+export type RetainerUpdateFormInput = z.input<typeof retainerUpdateSchema>;
+
 // DB row shapes -------------------------------------------------------
 
 export type InvoicePayment = {

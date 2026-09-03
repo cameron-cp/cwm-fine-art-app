@@ -11,6 +11,15 @@ import { getServerEnv } from "@/lib/env";
 // unit-tested without a key; this module is the only one that reads the secret.
 let client: Stripe | null = null;
 
+// Whether the configured key is a LIVE key. Only used to build dashboard deep
+// links, which need a /test/ segment for test-mode and sandbox objects. Reads
+// the prefix rather than any account field so it works with no network call and
+// before any Stripe request has been made.
+export function isStripeLiveMode(): boolean {
+  const { STRIPE_SECRET_KEY } = getServerEnv();
+  return Boolean(STRIPE_SECRET_KEY?.startsWith("sk_live"));
+}
+
 export function getStripe(): Stripe | null {
   const { STRIPE_SECRET_KEY } = getServerEnv();
   if (!STRIPE_SECRET_KEY) return null;
