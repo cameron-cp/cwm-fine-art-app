@@ -1,0 +1,42 @@
+name: test
+
+# Until now this repo had no CI at all: every PR merged on the strength of
+# someone running `npm test` locally and saying it passed. This runs the three
+# gates that are cheap and deterministic.
+#
+# What it deliberately does NOT cover, so the green check is not read as more
+# than it is:
+#   * The Docker-gated integration tests (apply_stripe_event, the invoice RPCs)
+#     skip themselves without a local Supabase stack — see stripe-rpc.test.ts.
+#   * The live Stripe sandbox tests skip without an sk_test key, and no Stripe
+#     credential is exposed to CI on purpose.
+# Both are gated to SKIP rather than fail, so the suite stays green here and
+# runs in full on a machine that has a stack and a sandbox key.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Types first: a type error explains a test failure, so seeing it before
+      # the wall of test output saves a round trip.
+      - run: npx tsc --noEmit
+
+      - run: npx eslint src/
+
+      # vitest.config.ts supplies dummy NEXT_PUBLIC_* values (env.ts parses
+      # public env at import time), so no secrets are needed here.
+      - run: npm test

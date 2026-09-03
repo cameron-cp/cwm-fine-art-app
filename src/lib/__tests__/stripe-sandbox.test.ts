@@ -5,6 +5,7 @@ import { syncStripeCustomer } from "@/lib/stripe/customers";
 import { buildCustomerCreateParams } from "@/lib/stripe/params";
 import { resolveReceiptEmail } from "@/lib/stripe/receipt-email";
 import { updateRetainerSubscription } from "@/lib/stripe/subscriptions";
+import { readString, subscriptionFacts } from "@/lib/stripe/stripe-fields";
 
 // Integration tests for the two seams that reach into a LIVE Stripe account:
 // pushing a contact rename onto its Customer, and swapping a running
@@ -163,6 +164,42 @@ d("Stripe sandbox seams", () => {
     if (!after.deleted) {
       expect(after.email).toBe("amelia-fixture@example.com");
     }
+  }, 60_000);
+
+  it("still finds the version-sensitive fields the webhook depends on", async () => {
+    // These are the two reads that have MOVED between Stripe API versions, and
+    // the reason client.ts pins the account's version rather than the SDK
+    // default: a mismatch means the SDK types describe one shape while the
+    // endpoint receives another.
+    //
+    //   * current_period_end migrated from the subscription to its items.
+    //   * an invoice's subscription link migrated to parent.subscription_details.
+    //
+    // stripe-fields.ts navigates both defensively, but "defensively" is only
+    // worth anything if something proves the field is actually found — a null
+    // here would silently store "next charge: —" on every retainer.
+    const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ["items.data.price"],
+    });
+    const facts = subscriptionFacts(sub);
+    expect(facts.currentPeriodEnd).not.toBeNull();
+    expect(Date.parse(facts.currentPeriodEnd!)).toBeGreaterThan(Date.now());
+
+    // The subscription's first invoice, read the way the webhook reads it.
+    const invoices = await stripe.invoices.list({
+      subscription: subscriptionId,
+      limit: 1,
+    });
+    const inv = invoices.data[0];
+    expect(inv).toBeDefined();
+    const linkedSubId =
+      readString(inv, "subscription") ??
+      readString(
+        (inv as { parent?: { subscription_details?: unknown } }).parent
+          ?.subscription_details,
+        "subscription",
+      );
+    expect(linkedSubId).toBe(subscriptionId);
   }, 60_000);
 
   it("swaps a live subscription onto a new amount and cadence", async () => {

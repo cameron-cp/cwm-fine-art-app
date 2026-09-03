@@ -7,7 +7,7 @@ import { constructStripeEvent } from "@/lib/stripe/webhook";
 // We use Stripe's own test-header signer, so this exercises the real HMAC path,
 // not a stub.
 
-const stripe = new Stripe("sk_test_dummy", { apiVersion: "2026-06-24.dahlia" });
+const stripe = new Stripe("sk_test_dummy", { apiVersion: "2026-08-26.dahlia" });
 const secret = "whsec_test_secret_value";
 
 function sign(payload: string): string {
@@ -42,7 +42,7 @@ describe("constructStripeEvent — HMAC boundary", () => {
   it("rejects a signature made with the wrong secret", () => {
     const payload = JSON.stringify({ id: "evt_2", type: "x", data: { object: {} } });
     const wrong = new Stripe("sk_test_dummy", {
-      apiVersion: "2026-06-24.dahlia",
+      apiVersion: "2026-08-26.dahlia",
     }).webhooks.generateTestHeaderString({ payload, secret: "whsec_wrong" });
     const res = constructStripeEvent(stripe, payload, wrong, secret);
     expect("error" in res).toBe(true);
