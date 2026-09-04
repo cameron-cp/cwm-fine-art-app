@@ -6,7 +6,7 @@
 // a date that moves on every deploy is not.
 //
 // ISO 8601, interpreted as UTC so the rendered day is identical everywhere.
-export const LEGAL_LAST_UPDATED = "2026-09-03";
+export const LEGAL_LAST_UPDATED = "2026-09-04";
 
 /** "2026-09-03" -> "September 3, 2026". UTC-pinned so server and client agree. */
 export function formatLegalDate(iso: string): string {

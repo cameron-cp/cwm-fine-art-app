@@ -56,16 +56,18 @@ export default function PrivacyPage() {
     <>
       <LegalHeader
         title="Privacy"
-        standfirst={`${GALLERY_NAME} is an art advisory. It runs a private application to manage its own records — works, contacts, and invoices. This page says plainly what that application holds, who else touches it, and how to ask us to change or delete something.`}
+        standfirst={`${GALLERY_NAME} is an art advisory in Texas. It runs a private application to keep its records: works, contacts, invoices. Here is what that application holds and who else can see it.`}
       />
 
       <div className="lg-body">
         <section className="lg-section">
           <h2>What this application is</h2>
           <p>
-            It is an internal tool for one art advisor. Two people have accounts. There is no public
-            sign-up, no client log-ins, no advertising, and no marketplace. We do not sell, rent, or
-            share information for anyone else&rsquo;s marketing.
+            {GALLERY_NAME}
+            {" is a Texas business, and this is its internal tool. A small number of "}
+            authorized people can sign in. There is no public sign-up and no client log-ins. We
+            don&rsquo;t advertise, we don&rsquo;t run a marketplace, and we don&rsquo;t sell or
+            share personal information — including as those words are defined under California law.
           </p>
         </section>
 
@@ -74,7 +76,7 @@ export default function PrivacyPage() {
           <p>Two groups of people.</p>
           <ul>
             <li>
-              <strong>The two people who sign in.</strong> Their name, email address, and the Google
+              <strong>The people who sign in.</strong> Their name, email address, and the Google
               account used to sign in.
             </li>
             <li>
@@ -85,9 +87,10 @@ export default function PrivacyPage() {
             </li>
           </ul>
           <p>
-            If your details are in here, it is because you are one of the advisory&rsquo;s contacts.
-            We did not buy your information from anyone, and no one outside the two accounts above
-            can read it.
+            Most of the second group never touch this application. Chloe enters what she needs to do
+            her job, the way she would have written it in a book. You&rsquo;re in here because
+            you&rsquo;re a contact of hers. We haven&rsquo;t bought your details from a list broker,
+            and access is limited to the people who sign in and the service providers listed below.
           </p>
         </section>
 
@@ -148,8 +151,9 @@ export default function PrivacyPage() {
         <section className="lg-section">
           <h2>Companies that process data for us</h2>
           <p>
-            Each of these is a vendor we pay to provide part of the service. None of them is
-            permitted to use the advisory&rsquo;s information for their own purposes.
+            Each is a vendor we pay to provide part of the service, and none may use our
+            information for its own purposes. This list is current as of the date at the top of
+            this page; we update it when we change a vendor.
           </p>
           <div className="lg-table-wrap">
             <table className="lg-table">
@@ -183,13 +187,16 @@ export default function PrivacyPage() {
             Two parts of the application use Anthropic&rsquo;s API. One answers the advisor&rsquo;s
             questions about her own records — &ldquo;which works has this collector asked
             about&rdquo; and the like. The other reads an inventory file she uploads and turns it
-            into structured artwork records. Both send the relevant text to Anthropic and receive
-            text back.
+            into structured artwork records.
           </p>
           <p>
-            Only the two signed-in accounts can use these features. Clients never interact with
-            them, and no AI feature runs on a public page. Under Anthropic&rsquo;s commercial terms,
-            content sent through their API is not used to train their models.
+            Be clear about what that means: answering a question about a contact sends that
+            contact&rsquo;s name and Chloe&rsquo;s notes about them to Anthropic. Our agreement with
+            Anthropic prohibits using any of it to train their models.
+          </p>
+          <p>
+            Only signed-in accounts can use these features. Clients never interact with them, and no
+            AI feature runs on a public page.
           </p>
         </section>
 
@@ -201,12 +208,16 @@ export default function PrivacyPage() {
             marked so search engines do not index them.
           </p>
           <p>
-            When a recipient opens the link, the application records that the room was opened and
-            which works were viewed, and attributes that to the contact the link was issued to. This
-            is first-party record-keeping so the advisor knows what a client responded to. There are
-            no advertising pixels, no third-party analytics, and no cross-site tracking anywhere in
-            the application. A link can be revoked at any time, which stops both access and
-            recording.
+            Each link is issued to one named contact, so when you open a room we know it was you.
+            We record that the room was opened and which works you scrolled to, and we attach that
+            to your contact record. Chloe uses it to know what you responded to, which is what a
+            dealer would have noticed had you walked into the room with her.
+          </p>
+          <p>
+            Nothing is stored on your device. No cookie is set, nothing is written to your browser,
+            and there is no advertising pixel, no third-party analytics, and no tracking of you
+            anywhere else on the web. The record is ours and it stays here. Ask us to stop and we
+            will revoke the link, which ends both the access and the recording.
           </p>
         </section>
 
@@ -215,47 +226,59 @@ export default function PrivacyPage() {
           <ul>
             <li>No advertising, ad networks, or retargeting</li>
             <li>No third-party analytics and no tracking pixels</li>
-            <li>No selling, renting, or sharing information for marketing</li>
-            <li>No profiling and no automated decisions that have a legal effect on anyone</li>
+            <li>No selling, renting, or sharing personal information</li>
+            <li>No automated decisions that have a legal effect on anyone</li>
             <li>No training of AI models on your information</li>
           </ul>
+          <p>
+            One thing we do that belongs on this list rather than off it: we note which works a
+            named contact looked at in a viewing room, and we use it to judge what to show them
+            next. It is a human reading a signal, not a machine deciding anything. It is described
+            in full above, and we would rather write it down here than let you find it out later.
+          </p>
         </section>
 
         <section className="lg-section">
           <h2>Cookies</h2>
           <p>
-            Only the ones the application needs to work. Our authentication provider sets a session
-            cookie so a signed-in user stays signed in. Public pages — this one, the terms page, and
-            viewing rooms — set no analytics or advertising cookies.
+            One, and only for the people who sign in: our authentication provider sets a session
+            cookie so a signed-in user stays signed in. The public pages set no cookies at all.
+            That includes viewing rooms — open one and nothing is written to your browser.
           </p>
         </section>
 
         <section className="lg-section">
           <h2>How long we keep things</h2>
           <p>
-            Business records — works, contacts, invoices — are kept for as long as the advisory
-            needs them, and invoices for as long as tax and accounting rules require, generally at
-            least seven years. Viewing-room activity is kept for as long as the room exists.
-            Anything else is deleted once it is no longer useful.
+            Art records outlast their transactions — a work Chloe placed in 2019 still matters when
+            it comes back to market — so contacts, artworks, and provenance notes are kept
+            indefinitely unless you ask us to delete them. Invoices we keep for seven years, which
+            is longer than the IRS baseline of three and is the practice our accountant asks for.
+            Viewing-room activity is kept while the room exists and goes when the room does.
           </p>
         </section>
 
         <section className="lg-section">
           <h2>Security</h2>
           <p>
-            Getting in requires signing in through Google. Records are held in a database with
-            row-level security tied to the signed-in account, so a request without a valid session
-            returns nothing. Traffic is encrypted in transit. No system is perfect; if something
-            goes wrong in a way that affects you, we will tell you.
+            Signing in goes through Google. Records sit in a database with row-level security tied
+            to the signed-in account, so a request without a valid session returns nothing at all.
+            Traffic is encrypted in transit.
+          </p>
+          <p>
+            If there is a breach that reaches your information, we will tell you and the Texas
+            Attorney General as Texas law requires, and we won&rsquo;t sit on it while we decide
+            whether it counts.
           </p>
         </section>
 
         <section className="lg-section">
           <h2>Where your information is held</h2>
           <p>
-            The advisory operates in the United States, and the service providers listed above store
-            and process information there. If you are outside the United States and give us your
-            details, they are transferred to and held in the United States.
+            All seven providers above are United States companies, and we hold and work with your
+            information in the United States. Some of them serve pages from data centers closer to
+            wherever you happen to be, which is how the web works and is not somewhere your records
+            are stored.
           </p>
         </section>
 
@@ -265,15 +288,18 @@ export default function PrivacyPage() {
             Write to{" "}
             <a className="lg-link" href={`mailto:${CONTACT}`}>
               {CONTACT}
-            </a>{" "}
-            and ask what we hold about you, ask for a copy, have it corrected, have it deleted, or
-            ask to stop receiving email. We answer within 30 days. The one limit on deletion is
-            records we are legally required to keep, mainly completed invoices.
+            </a>
+            . Ask what we hold about you, ask for a copy, have it corrected, have it deleted, or ask
+            to stop receiving email. We&rsquo;ll answer as quickly as we can and always within the
+            time the law allows us. Two limits, both honest: we may need to confirm you&rsquo;re
+            who you say you are before we hand over a file, and we keep completed invoices because
+            tax law says we must.
           </p>
           <p>
-            Where you live may already give you these rights — California, the European Union, and
-            the United Kingdom all do. We extend them to everyone, so you do not need to cite a
-            statute to ask. We will not treat you differently for asking.
+            Some of you have these rights by statute. The rest of you can ask anyway — that&rsquo;s
+            how we prefer to work, though it&rsquo;s a practice rather than a promise, and
+            we&rsquo;d rather say so than pretend otherwise. Nobody gets treated differently for
+            asking.
           </p>
         </section>
 
@@ -297,11 +323,11 @@ export default function PrivacyPage() {
         <section className="lg-section">
           <h2>Contact</h2>
           <p>
-            {GALLERY_NAME} —{" "}
+            {GALLERY_NAME}, a Texas business. Write to{" "}
             <a className="lg-link" href={`mailto:${CONTACT}`}>
               {CONTACT}
-            </a>
-            . The companion page is our{" "}
+            </a>{" "}
+            and Chloe reads it. The companion page is our{" "}
             <Link className="lg-link" href="/terms">
               terms of use
             </Link>

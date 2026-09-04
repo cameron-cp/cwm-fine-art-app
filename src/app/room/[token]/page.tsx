@@ -62,6 +62,21 @@ export default async function ViewingRoomPage({
         <div className="vr-gallery">{GALLERY_NAME}</div>
         <h1 className="vr-title">{room.title}</h1>
         {room.intro_note && <p className="vr-intro">{room.intro_note}</p>}
+        {/* Conspicuous, above the fold, before any content. The Terms bind a
+            recipient only if the recipient was actually shown them — browsewrap
+            with no notice is unenforceable (Nguyen v. Barnes & Noble). See
+            docs/legal/2026-09-04-outside-counsel-review.md, headline item 1. */}
+        <p className="vr-legal">
+          This room is private and prepared for you. By viewing it you agree to our{" "}
+          <a className="vr-legal-link" href="/terms">
+            Terms of Use
+          </a>
+          , and we record which works you open so we know what interested you — see the{" "}
+          <a className="vr-legal-link" href="/privacy">
+            Privacy Policy
+          </a>
+          .
+        </p>
       </header>
 
       {works.length === 0 ? (
@@ -74,7 +89,15 @@ export default async function ViewingRoomPage({
         </div>
       )}
 
-      <footer className="vr-footer">{GALLERY_NAME}</footer>
+      <footer className="vr-footer">
+        <span>{GALLERY_NAME}</span>
+        <a className="vr-footer-link" href="/privacy">
+          Privacy
+        </a>
+        <a className="vr-footer-link" href="/terms">
+          Terms
+        </a>
+      </footer>
     </main>
   );
 }
